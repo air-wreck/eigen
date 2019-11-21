@@ -8,34 +8,55 @@
 
 using LinearAlgebra;
 
-" eigenvectors_power(A)
+" DominantEigen(A)
 
-Compute the eigenvectors of the square matrix A using the power method.
+Compute the dominant eigenvector of the diagonalizable matrix A.
 "
-function eigen_power_symmetric(A; tol=0.00001, max_iter=1000)
-  function greatest_eigen(B)
-    original = B
-    # continue computing powers of A until the Euclidean norm between
-    # iterations is less than the tolerance
-    iters::Int = 0
-    prev = B[:,1]
-    B ^= 2
-    B /= norm(B[:,1])
-    while norm(prev - B[:,1]) > tol && iters < max_iter
-      prev = B[:,1]
-      B ^= 2
-      B /= norm(B[:,1])
-      iters += 1
+function DominantEigen(A; tol=0.00001, max_iter=1000)
+
+  function first_nonzero_col(B; ɛ=0.000001)
+    for i in axes(B, 1)  # replace this with a matrix comprehension!
+      col = B[:,i]
+      if norm(col) > ɛ
+        return col
+      end
     end
-    x = B[:,1]
-    λ = norm(original * x) * sign((original * x)[1] * x[1])
-    return (x = x, λ = λ)
+    return nothing
   end
+
+  # squares a matrix and then makes the first nonzero column an unit vector
+  function square_and_normalize(B; ɛ=0.000001)
+    B ^= 2
+    return B / norm(first_nonzero_col(B))
+  end
+
+  # continue computing powers of A until the Euclidean norm between
+  # iterations is less than the tolerance
+  A0 = A
+  iters::Int = 0
+  x = first_nonzero_col(A)
+  A = square_and_normalize(A)
+  while norm(x - first_nonzero_col(A)) > tol && iters < max_iter
+    x = first_nonzero_col(A)
+    A = square_and_normalize(A)
+    iters += 1
+  end
+  x = first_nonzero_col(A)
+  λ = dot(A0 * x, x) / dot(x, x)
+  return (x = x, λ = λ)
+end
+
+" EigenPowerSymmetric(S)
+
+Compute the eigenvectors of the symmetric matrix S using the power method.
+"
+function EigenPowerSymmetric(S; tol=0.00001, max_iter=1000)
   xs = []
   λs = []
-  current = fill(0, size(A))
-  for i in axes(A, 1)  # by Spectral Thm, symmetric A has n eigenvectors
-    x, λ = greatest_eigen(A - current)
+  current = fill(0, size(S))
+  for i in axes(S, 1)  # by Spectral Thm, symmetric A has n eigenvectors
+                       # so we don't need to worry about zero, I think
+    x, λ = DominantEigen(S - current)
     current += λ * x * x'
     push!(xs, x)
     push!(λs, λ)
@@ -58,12 +79,16 @@ If no method is given, default to the power method.
 
 Examples:
 ```julia-repl
+A = [1 3 ; 3 1];
 eigenvectors(A, tol=0.001, method=:qr)
 ```
+
+Notes:
+* The `:power` method only works on symmetric matrices
 "
 function eigenvectors(A; tol=0.00001, max_iter=1000, method=:power)
   if method == :power
-    return eigen_power_symmetric(A, tol=tol, max_iter=max_iter)
+    return EigenPowerSymmetric(A, tol=tol, max_iter=max_iter)
   elseif method == :qr
     return eigenvectors_qr(A, tol=tol)
   else

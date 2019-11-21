@@ -6,6 +6,7 @@
 \usepackage{amsthm}
 \usepackage{mathtools}
 \usepackage{tcolorbox}
+\usepackage[vlined]{algorithm2e}
 
 % make the document title look pretty fancy
 \makeatletter
@@ -31,9 +32,15 @@
   colframe=blue!35!black,
   fonttitle=\bfseries
 }{thm}
+\newtcbtheorem[number within=section]{algo}{Algorithm}{
+  colback=gray!5,
+  colframe=gray!35!black,
+  fonttitle=\bfseries
+}{algo}
 
 % math commands
 \let\vec\mathbf
+\def\store{$\leftarrow$ }
 
 % document meta-info
 \title{Numerical Methods for Computing Eigenvectors}
@@ -75,29 +82,121 @@ That is to say, $\lambda \in \mathbb{R}^n$ is an eigenvalue of $A$ if and only i
 
 Computing eigenvectors is useful for solving [blah blah]
 
+\begin{theorem}{spectral theorem for real symmetric matrices}{spectral}
+  If $A$ is a real symmetric $n \times n$ matrix, then $A$ has $n$ orthonormal eigenvectors.
+\end{theorem}
+
 \subsection{Singular Vectors and Values}
 We have seen that eigenvectors and eigenvalues are useful for understanding the behavior of square matrices, but what about the more general case of $m \times n$ matrices? To handle this, we define the notion of singular vectors and values in definition \ref{defn:singular}.
 
 \begin{definition}{singular vectors and values}{singular}
+  Given an $m \times n$ matrix $A$, we denote the eigenvectors of $A^TA$ as the \textit{singular vectors} of $A$. The corresponding eigenvalues of $A^TA$ are called the \textit{singular values} of $A$.
+\end{definition}
+
+\begin{theorem}{existence of singular vectors and values}{singular}
   Any $m \times n$ matrix $A$ admits a decomposition $A = U \Sigma V^T$, where
   \begin{itemize}
     \item $U$ is an $m \times m$ orthogonal matrix
     \item $\Sigma$ is an $m \times n$ matrix that is ``diagonal'' in that $\Sigma_{ij} = 0$ if $i \neq j$
     \item $V$ is an $n \times n$ orthogonal matrix.
   \end{itemize}
-  We call the nonzero entries $\sigma_i$ in
-\end{definition}
+\end{theorem}
 
 \section{Numerical Methods}
 In general, we have seen that it is possible to compute eigenvectors of an $n \times n$ matrix as the roots of an $n$-degree polynomial. Unfortunately, it is a well-known result that polynomials of degree $5$ and higher to not in general admit a solution by radicals [cite]...
 
-The most obvious way to compute the eigenvectors of $A$
+The most obvious way to compute the eigenvectors of $A$ is to first find the eigenvalues by $LU$ decomposition and then use elimination to find the null space of $A - \lambda I$.
 
 \subsection{The Power Algorithm}
 Present algorithm
 Explain why it works
 Possibly bounds on accuracy?
 
+Conditions on convergence: if there are multiple eigenvalues with the same magnitude, this will not converge. (Since any symmetric matrix has real eigenvalues, this only occurs when $\lambda$ and $-\lambda$ are both eigenvalues of $A$.) [Is there some other condition on null spaces and stuff?] Also, the rate at which this converges depends greatly on the ratio between the two eigenvalues!
+
+Also, does this handle degenerate eigenvalues?
+
+We first present algorithm \ref{algo:pwrsym} for symmetric matrices only because it is highly illustrative. Additionally, [all we need for singular vectors]
+
+We square and then normalize by the first nonzero column of $A^n$. If such a column does not exist (i.e. $A^n$ is the zero matrix), then $A$ must have been a nilpotent matrix. In this case, the only eigenvalue can be zero, as proved in theorem \ref{thm:nilpotent}. In this case, the problem reduces to finding the null space of $A$.
+
+Now a matrix can have at most $n$ independent eigenvectors, so we only have to iterate up to $n$.
+
+\begin{theorem}{eigenvalues of a nilpotent matrix}{nilpotent}
+  If $A$ is a nilpotent matrix (i.e. $A^n$ is the zero matrix for some $n \in \mathbb{N}^+$), then the only eigenvalue of $A$ is $\lambda = 0$.
+  \begin{proof}
+    Suppose $\vec{x} \neq \vec{0}$ were an eigenvector of $A$ with eigenvalue $\lambda \neq 0$. Then $A^n\vec{x} = \lambda^n\vec{x}$, but if $\lambda \neq 0$, then this is some nonzero vector. However, $A^n = 0$, so we also have $A^n\vec{x} = \vec{0}$, a contradiction.
+  \end{proof}
+\end{theorem}
+
+\begin{algo}{\texttt{DominantEigen}}{domeigen}
+  \begin{algorithm}[H]
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Parameter}{parameter}
+    \SetKwInOut{Output}{output}
+    \SetKwFunction{FirstNonzeroCol}{FirstNonzeroCol}
+    \SetKwFunction{SquareAndNorm}{SquareAndNormalize}
+
+    \Input{real diagonalizable $n \times n$ matrix $A$}
+    \Parameter{tolerance $\varepsilon > 0$, max iterations $N > 0$}
+    \Output{dominant eigenpair $(\vec{x}, \lambda)$}
+    \BlankLine
+    $A'$ \store $A$\;
+    $i$ \store $0$\tcp*{number of iterations so far}
+    $\vec{x}$ \store \FirstNonzeroCol{$A'$}\;
+    $A'$ \store \SquareAndNorm{$A'$}\;
+    \While{$\lVert\vec{x} - \FirstNonzeroCol{$A'$}\rVert > \varepsilon$ {\normalfont and} $i < N$}{
+      $\vec{x}$ \store \FirstNonzeroCol{$A'$}\;
+      $A'$ \store \SquareAndNorm{$A'$}\;
+      $i$ \store $i + 1$\;
+    }
+    $\vec{x}$ \store \FirstNonzeroCol{$A'$}\;
+    $\lambda$ \store $(A\vec{x}\cdot\vec{x}) / (\vec{x}\cdot\vec{x})$\;
+  \end{algorithm}
+\end{algo}
+
+\begin{algo}{\texttt{EigenPowerSymmetric}}{pwrsym}
+  \begin{algorithm}[H]
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Parameter}{parameter}
+    \SetKwInOut{Output}{output}
+    \SetKwFunction{DominantEigen}{DominantEigen}
+
+    \Input{real symmetric $n \times n$ matrix $S$}
+    \Parameter{tolerance $\varepsilon > 0$, max iterations $N > 0$}
+    \Output{list $xs$ of eigenvectors and $\lambda s$ of eigenvalues}
+    \BlankLine
+    $xs$ $\leftarrow$ empty list\;
+    $\lambda s$ $\leftarrow$ empty list\;
+    $Z$ $\leftarrow$ $n \times n$ zero matrix\;
+    \For{$i \in [n]$}{
+      $\vec{x}$, $\lambda$ $\leftarrow$ \DominantEigen($S - Z$)\;
+      $Z$ $\leftarrow$ $Z + \lambda\vec{x}\vec{x}^T$\;
+      append $\vec{x}$ to $xs$\;
+      append $\lambda$ to $\lambda s$\;
+    }
+  \end{algorithm}
+\end{algo}
+
+
+Algorithm \ref{algo:pwrsym} also gives us an easy way to compute the singular values and singular vectors of any real matrix $A$: simply apply $\textrm{\texttt{EigenPowerSymmetric}}(A^TA)$.
+
+Finding the eigenvectors of a general square matrix (not necessarily symmetric) is somewhat trickier. We will
+
+[probably put a disclaimer at the top that we will only concern ourselves with real matrices, although we will sometimes emphasize this point in our algorithms. should we permit complex eigenvalues? nah, that moves us from Rn to Cn]
+
 \subsection{The QR Algorithm}
+\begin{algo}{\texttt{EigenQR}}{qr}
+  \begin{algorithm}[H]
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Parameter}{parameter}
+    \SetKwInOut{Output}{output}
+    \Input{real $m \times n$ matrix $A$ with independent columns}
+    \Output{eigenvectors $\vec{x}_i$ and corresponding eigenvalues $\lambda_i$}
+  \end{algorithm}
+\end{algo}
+
+\section{Results}
+Compare the two methods
 
 \end{document}
