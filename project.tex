@@ -1,0 +1,46 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{tcolorbox}
+
+% make the document title look pretty fancy
+\makeatletter
+\renewcommand{\maketitle}{
+  \begin{center}
+  {\vspace*{10mm}\LARGE\@title\par}
+  {\vspace{7mm}\large\@author\par}
+  {\vspace{1mm}21-241 Final Project\par}
+  {\vspace{3mm}\large\@date\vspace{8mm}}
+  \end{center}
+}
+\makeatother
+
+% set up fancy color box theorems
+\tcbuselibrary{theorems}
+\newtcbtheorem[number within=section]{theorem}{Theorem}{
+  colback=blue!5,
+  colframe=blue!35!black,
+  fonttitle=\bfseries
+}{thm}
+
+% document meta-info
+\title{Numerical Methods for Computing Eigenvectors}
+\author{Eric Zheng}
+\date{December 6, 2019}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  In this document, I present some background on numerical methods for computing
+  the eigenvectors and singular vectors of matrices. A Julia implementation of
+  the power and QR methods is given, and the two algorithms are compared
+\end{abstract}
+
+\section{Mathematical Background}
+We
+\end{document}
