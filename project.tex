@@ -21,11 +21,19 @@
 
 % set up fancy color box theorems
 \tcbuselibrary{theorems}
+\newtcbtheorem[number within=section]{definition}{Definition}{
+  colback=red!5,
+  colframe=red!35!black,
+  fonttitle=\bfseries
+}{defn}
 \newtcbtheorem[number within=section]{theorem}{Theorem}{
   colback=blue!5,
   colframe=blue!35!black,
   fonttitle=\bfseries
 }{thm}
+
+% math commands
+\let\vec\mathbf
 
 % document meta-info
 \title{Numerical Methods for Computing Eigenvectors}
@@ -42,5 +50,54 @@
 \end{abstract}
 
 \section{Mathematical Background}
-We
+It is assumed that the reader is familiar with linear algebra at the college
+introductory level, but a brief background of the relevant concepts is presented
+in this section.
+
+\subsection{Eigenvectors and Eigenvalues}
+\begin{definition}{eigenvectors and eigenvalues}{eigen}
+  Consider an arbitrary $n \times n$ matrix $A$. For some $\vec{x} \in \mathbb{R}^n$ (with $\vec{x} \neq \vec{0}$), we say that $\vec{x}$ is an \textit{eigenvector} of $A$ if, for some $\lambda \in \mathbb{R}$, $A\vec{x} = \lambda\vec{x}$. We denote $\lambda$ as the corresponding \textit{eigenvalue} of $A$.
+\end{definition}
+
+From definition \ref{defn:eigen} follows immediately a way to compute the eigenvalues of a given matrix. Note that
+\begin{equation*}
+  A\vec{x} = \lambda\vec{x} \implies A\vec{x} - \lambda\vec{x} = \vec{0}
+\end{equation*}
+and $\lambda\vec{x} = \lambda I \vec{x}$, so we have
+\begin{equation*}
+  A\vec{x} - \lambda I \vec{x} = (A - \lambda I)\vec{x} = \vec{0}.
+\end{equation*}
+That is to say, $\lambda \in \mathbb{R}^n$ is an eigenvalue of $A$ if and only if $A - \lambda I$ has a non-trivial null space. A matrix has a non-trivial null space if and only if it is singular, so we require that $\det(A - \lambda I) = 0$. This result is stated in theorem \ref{thm:poly}.
+
+\begin{theorem}{computing eigenvalues as polynomial roots}{poly}
+  Some $\lambda \in \mathbb{R}^n$ is an eigenvalue of the $n \times n$ matrix $A$ if and only if $\det (A - \lambda I) = 0$. We call $\det (A - \lambda I)$ the \textit{characteristic polynomial} for $A$. The problem then becomes identifying the roots of this polynomial.
+\end{theorem}
+
+Computing eigenvectors is useful for solving [blah blah]
+
+\subsection{Singular Vectors and Values}
+We have seen that eigenvectors and eigenvalues are useful for understanding the behavior of square matrices, but what about the more general case of $m \times n$ matrices? To handle this, we define the notion of singular vectors and values in definition \ref{defn:singular}.
+
+\begin{definition}{singular vectors and values}{singular}
+  Any $m \times n$ matrix $A$ admits a decomposition $A = U \Sigma V^T$, where
+  \begin{itemize}
+    \item $U$ is an $m \times m$ orthogonal matrix
+    \item $\Sigma$ is an $m \times n$ matrix that is ``diagonal'' in that $\Sigma_{ij} = 0$ if $i \neq j$
+    \item $V$ is an $n \times n$ orthogonal matrix.
+  \end{itemize}
+  We call the nonzero entries $\sigma_i$ in
+\end{definition}
+
+\section{Numerical Methods}
+In general, we have seen that it is possible to compute eigenvectors of an $n \times n$ matrix as the roots of an $n$-degree polynomial. Unfortunately, it is a well-known result that polynomials of degree $5$ and higher to not in general admit a solution by radicals [cite]...
+
+The most obvious way to compute the eigenvectors of $A$
+
+\subsection{The Power Algorithm}
+Present algorithm
+Explain why it works
+Possibly bounds on accuracy?
+
+\subsection{The QR Algorithm}
+
 \end{document}
