@@ -59,7 +59,7 @@ function DominantEigen2(A; tol=0.00001, max_iter=1000)
                             #       we can solve this by choosing n initial xs
                             #       and then comparing, since at least one must
                             #       have a component along x
-  x     = x0 / norm(x0)
+  x     = normalize(x0)
   iters = 0
   while norm(normalize(A * x) - x) > tol && iters < max_iter
     A ^= 2
@@ -83,8 +83,11 @@ function EigenPowerSymmetric(S; tol=0.00001, max_iter=1000)
   current = fill(0, size(S))
   for i in axes(S, 1)  # by Spectral Thm, symmetric S has n eigenvectors
                        # so we don't need to worry about zero, I think
+    # x, λ = DominantEigen2(S - current)
+    # current += λ * x * x'
+    # attempt Hotelling deflation
     x, λ = DominantEigen2(S - current)
-    current += λ * x * x'
+    current += λ / (x' * x) * x * x'
     push!(xs, x)
     push!(λs, λ)
   end
