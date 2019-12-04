@@ -170,7 +170,7 @@ The issue is that our algorithm only generates an approximation to $\vec{x}$, no
   \begin{equation*}
     \lVert \hat{\vec{x}}_1 - \vec{x}_1 \rVert = 0.00001,
   \end{equation*}
-  yet we have:
+  yet we have
   \begin{equation*}
     A\hat{\vec{x}}_1 = \begin{bmatrix}2 & 0 \\ 0 & 1\end{bmatrix}\begin{bmatrix}1 \\ 0.00001\end{bmatrix} = \begin{bmatrix}2 \\ 0.00001\end{bmatrix}.
   \end{equation*}
@@ -240,6 +240,24 @@ Now if $A$ is diagonalizable, then any $\vec{v}_0 \in \mathbb{R}^n$ can be expre
   \vec{v}_0 = c_1\vec{x}_1 + \cdots + c_n\vec{x}_n.
 \end{equation*}
 As long as $\vec{v}_0$ has some component $c_1 \neq 0$ along $\vec{x}_1$, then $A^k\vec{v}_0$ will converge to $\vec{x}_1$ as $k$ grows large. This is great, since $A^k\vec{v}_0$ can be recursively computed as $A(A^{k-1}\vec{v}_0)$, which is $k$ matrix-vector multiplications instead of $k$ matrix-matrix multiplications.
+
+But what happens if we choose an initial vector $\vec{v}_0$ with $c_1 = 0$? In this case, it is possible that this method will fail to converge. An example is given in example \ref{ex:power-sparse-no-convergence}. However, if we just choose a random $\vec{v}_0 \in \mathbb{R}^n$, we get $c_1 \neq 0$ with very high probability \cite[p.~53]{cornell}, so this is not particularly worrisome. Additionally, even if we are incredibly unlucky and choose a $\vec{v}_0$ that is deficient in $\vec{x}_1$, rounding errors in the computations will likely save us and push $c \neq 0$ \cite{pwr-rot}.
+
+\begin{example}{efficient power method with bad $\vec{v}_0$}{power-sparse-no-convergence}
+  Consider the matrix
+  \begin{equation*}
+    A = \begin{bmatrix}11 & 5 & 2 \\ 5 & 11 & 2 \\ 2 & 2 & 14\end{bmatrix}
+  \end{equation*}
+  which has eigenvalues $\lambda_1 = 18$, $\lambda_2 = 12$, $\lambda_3 = 6$ with corresponding eigenvectors $\vec{x}_1 = (1,1,1)$, $\vec{x}_2 = (1,1,-2)$, and $\vec{x}_3 = (1,-1,0)$. If we choose a good initial vector like $\vec{v}_0 = (1,2,3)$, we indeed get
+  \begin{equation*}
+    \vec{v}_k \to a\vec{x}_1 \textrm{  as  } k \to \infty.
+  \end{equation*}
+  However, if we instead choose a bad initial vector like $\vec{v}_0 = (1,0,-1)$ (which is orthogonal to $\vec{x}_1$), we instead get $\vec{v}_k \to b\vec{x}_2$. In this case, since $A$ was diagonalizable, we still ended up with an eigenvector of $A$ (just not the one we expected). If we instead had a non-diagonalizable matrix like
+  \begin{equation*}
+    B = \begin{bmatrix}2 & 0 & 0 \\ 0 & 0 & -1 \\ 0 & 1 & 0\end{bmatrix},
+  \end{equation*}
+  which has real eigenvalue $\lambda=2$ and $\vec{x} = (1,0,0)$, we could fail to converge to anything at all if we choose $\vec{v}_0 = (0,1,1)$. However, a good choice of $\vec{v}_0 = (1,1,1)$ will still converge to a multiple of $\vec{x}$, highlighting the importance of the initial vector selection.
+\end{example}
 
 \subsection{Implementation}
 
@@ -477,6 +495,7 @@ Compare the two methods
   \bibitem{mit-sensitivity} \url{https://web.mit.edu/18.06/www/Spring17/Power-Method.pdf}
   \bibitem{deflation} \url{http://www.macs.citadel.edu/chenm/344.dir/08.dir/lect4_2.pdf}
   \bibitem{matmul} \url{https://www.cs.toronto.edu/\~yuvalf/Limitations.pdf}
+  \bibitem{cornell} Blum, Hopcroft, and Kannan. \emph{Foundations of Data Science}. \url{https://www.cs.cornell.edu/jeh/book.pdf}
 \end{thebibliography}
 
 \end{document}
