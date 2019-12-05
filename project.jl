@@ -54,20 +54,13 @@ function DominantEigen2(A; tol=0.00001, max_iter=1000)
     return x / norm(x)
   end
 
-  A0    = A
-  x0    = rand(size(A, 1))  # TODO: what if initial x is close to an eigenvector?
-                            #       we can solve this by choosing n initial xs
-                            #       and then comparing, since at least one must
-                            #       have a component along x
-  x     = normalize(x0)
+  x = normalize(rand(size(A, 1)))
   iters = 0
   while norm(normalize(A * x) - x) > tol && iters < max_iter
-    A ^= 2
-    A /= norm(A)
-    x  = normalize(A * x0)
+    x = normalize(A * x)
     iters += 1
   end
-  λ = dot(A0 * x, x) / dot(x, x)
+  λ = dot(A * x, x) / dot(x, x)
   return (x = x, λ = λ)
 end
 
@@ -80,14 +73,13 @@ function EigenPowerSymmetric(S; tol=0.00001, max_iter=1000)
   #       whereas DominantEigen2 handles zeros more gracefully
   xs = []
   λs = []
-  current = fill(0, size(S))
   for i in axes(S, 1)  # by Spectral Thm, symmetric S has n eigenvectors
                        # so we don't need to worry about zero, I think
     # x, λ = DominantEigen2(S - current)
     # current += λ * x * x'
     # attempt Hotelling deflation
-    x, λ = DominantEigen2(S - current)
-    current += λ / (x' * x) * x * x'
+    x, λ = DominantEigen2(S)
+    S -= λ / (x' * x) * x * x'
     push!(xs, x)
     push!(λs, λ)
   end

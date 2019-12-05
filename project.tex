@@ -103,7 +103,7 @@ However, the equivalence of eigenvalue-finding and polynomial root-finding gives
 The power method for computing eigenvectors takes successive powers of the matrix $A^k$ until some stopping criterion is reached. As $k$ grows large, the columns of $A$ will approach the dominant eigenvector of $A$. This is stated in theorem \ref{thm:powermethod}.
 
 \begin{theorem}{the power method}{powermethod}
-  If $A$ is an $n \times n$ diagonalizable matrix with a dominant eigenvector $\vec{x}$, then the columns of $A^k$ approach a multiple of $\vec{x}$ as $k$ grows arbitrarily large.
+  If $A$ is an $n \times n$ diagonalizable matrix with a dominant eigenvector $\vec{x}$, then the columns of $A^k$ approach a multiple of $\vec{x}$ as $k$ grows arbitrarily large. (More precisely, at least one column does so.)
 \end{theorem}
 \begin{proof}
   Since $A$ is diagonalizable, let $\vec{x}_1, \ldots, \vec{x}_n$ be a basis of eigenvectors for $\mathbb{R}^n$, where we order the eigenvectors so that $\vec{x}_1$ is a dominant eigenvector. Now since the $\vec{x}_i$'s form a basis, any $\vec{v} \in \mathbb{R}^n$ can be expressed as the linear combination
@@ -154,7 +154,7 @@ Note that diagonalizability is a sufficient condition for the power method to co
 \end{example}
 
 \subsection{Convergence Analysis}
-For all its faults, the power method is a very elegant way to compute the dominant eigenvector of a matrix. However, we are typically concerned not just with how elegant a method is, but also how efficient it is.
+The power method is a particularly elegant method for computing the dominant eigenvector of a matrix, but how efficient is it?
 
 \subsection{Rayleigh Quotients}
 Up until now, we have developed a method for finding the eigenvectors of a matrix, but what about the eigenvalues? Based on definition \ref{defn:eigen}, it is tempting to just take an eigenvector $\vec{x} \in \mathbb{R}^n$, compute $A\vec{x} = \lambda\vec{x}$, and then see how much the components of $\vec{x}$ were scaled to find $\lambda$.
@@ -182,7 +182,7 @@ The issue is that our algorithm only generates an approximation to $\vec{x}$, no
   which would give $\lambda \approx 3/2$, which is significantly off from the true value $\lambda = 2$, despite the very good eigenvector approximation.
 \end{example}
 
-So how should we compute eigenvalues given a corresponding eigenvector? A common way to do this is to use the Rayleigh quotient, given in definition \ref{defn:rayleigh}
+So how should we compute eigenvalues given a corresponding eigenvector? A common way to do this is via the Rayleigh quotient, given in definition \ref{defn:rayleigh}.
 
 \begin{definition}{Rayleigh quotient CITE}{rayleigh}
   If we have an approximation $\vec{x} \in \mathbb{R}^n$ for an eigenvector of $A$, then the \textit{Rayleigh quotient} approximation for the corresponding eigenvalue $\lambda$ is given by
@@ -198,7 +198,7 @@ This can be thought of as the average of the $\mu_i$'s weighted by the square of
 which is much closer to the true value of $\lambda = 2$.
 
 \subsection{Deflation}
-One limitation is that the power method, as presented in theorem \ref{thm:powermethod}, only finds the dominant eigenvector of a matrix. For many physical systems, the behavior is determined mostly by the dominant eigenvector, so this is sufficient. However, in the special case where $A$ is symmetric, we can actually do better. By the spectral theorem (restated in theorem \ref{thm:spectral}), we can take the spectral decomposition of symmetric $A$ into orthogonal $X$ and diagonal $\Lambda$, as in
+One limitation is that the power method, as presented in theorem \ref{thm:powermethod}, only finds the dominant eigenvector of a matrix. For many physical systems, the behavior is determined mostly by the dominant eigenvector, so this is sufficient \cite{spanish}. However, in the special case where $A$ is symmetric, we can actually do better. By the spectral theorem (restated in theorem \ref{thm:spectral}), we can take the spectral decomposition of symmetric $A$ into orthogonal $X$ and diagonal $\Lambda$, as in
 \begin{equation*}
   A = X \Lambda X^T = \lambda_1 \vec{x}_1 \vec{x}_1^T + \cdots + \lambda_n \vec{x}_n \vec{x}_n^T
 \end{equation*}
@@ -206,13 +206,13 @@ where we sort the eigenvalues in order of magnitude. Now applying the power meth
 \begin{equation*}
   B_1 = A - \lambda_1 \vec{x}_1 \vec{x}_1^T = \lambda_2 \vec{x}_2 \vec{x}_2^T + \cdots + \lambda_n \vec{x}_n \vec{x}_n^T
 \end{equation*}
-is a symmetric matrix that has eigenvalues $\lambda_2, \ldots, \lambda_n$ and corresponding $\vec{x}_2, \ldots, \vec{x}_n$! Hence we can apply the power method to $B_1$ to find $\vec{x}_2$ and $\lambda_2$. We can keep on going with
+is a symmetric matrix that has eigenvalues $\lambda_2, \ldots, \lambda_n$ and corresponding $\vec{x}_2, \ldots, \vec{x}_n$! ($B_1$ also has a zero eigenvalue, which is not important because it is the least in magnitude.) Hence we can apply the power method to $B_1$ to find $\vec{x}_2$ and $\lambda_2$. We can keep on going with
 \begin{equation*}
   B_2 = B_1 - \lambda_2 \vec{x}_2 \vec{x}_2^T = \lambda_3 \vec{x}_3 \vec{x}_3^T + \cdots + \lambda_n \vec{x}_n \vec{x}_n^T
 \end{equation*}
 to which we can apply the power method to pick off $\vec{x}_3$ and $\lambda_3$. We keep on going until we have found all $n$ eigenvectors, a technique known as \textit{deflation}.
 
-In fact, even if $A$ is not symmetric, we can apply a similar deflation technique for finding all the eigenvalues of $A$, although we don't get any additional eigenvectors beyond the dominant one. The reader is referred to \cite{deflation} for a full explanation, but in general the procedure is given in theorem \ref{thm:hotelling-deflation}. In the case of a symmetric matrix, this simplifies to the previously described deflation procedure.
+In fact, even if $A$ is not symmetric, we can apply a similar deflation technique for finding all the eigenvalues of $A$, although we don't get any additional eigenvectors beyond the dominant one. The reader is referred to \cite{deflation} for a full explanation, but in general the procedure is given in theorem \ref{thm:hotelling-deflation}. In the case when we take unit eigenvectors of a symmetric matrix, this procedure becomes the previously described deflation procedure.
 
 \begin{theorem}{Hotelling deflation}{hotelling-deflation}
   Suppose $A$ is a matrix with eigenvalues $\lambda_1, \ldots, \lambda_k$ and corresponding eigenvalues $\vec{x}_1, \ldots, \vec{x}_k$. Then the matrix
@@ -228,11 +228,11 @@ As we have developed it thus far, the power method involves computing large powe
 A faster approach is to reframe the problem as a bunch of matrix-vector multiplications, which can be computed naively in $O(n^2)$. In fact, if $A$ is a sparse matrix (i.e. most entires are zero), matrix-vector multiplication can become \emph{extremely} efficient \cite{pwr-rot}. We can tweak theorem \ref{thm:powermethod} slightly into theorem \ref{thm:powermethod-sparse}, whose proof is much the same as theorem \ref{thm:powermethod}.
 
 \begin{theorem}{more efficient power method}{powermethod-sparse}
-  Suppose $A$ is an $n \times n$ diagonalizable matrix with a dominant eigenvalues $\lambda_1$ and corresponding eigenvector $\vec{x}_1$. Then there exists some $\vec{v}_0 \in \mathbb{R}^n$ such that
+  Suppose $A$ is an $n \times n$ diagonalizable matrix with a dominant eigenvalue $\lambda$ and corresponding eigenvector $\vec{x}$. Then there exists some $\vec{v}_0 \in \mathbb{R}^n$ such that
   \begin{equation*}
     \vec{v}_k = A^k\vec{v}_0 = A\vec{v}_{k-1}
   \end{equation*}
-  approaches a multiple of $\vec{x}_1$ as $k$ grows arbitrarily large.
+  approaches a multiple of $\vec{x}$ as $k$ grows arbitrarily large.
 \end{theorem}
 
 Now if $A$ is diagonalizable, then any $\vec{v}_0 \in \mathbb{R}^n$ can be expressed in the basis of eigenvectors as
@@ -241,7 +241,7 @@ Now if $A$ is diagonalizable, then any $\vec{v}_0 \in \mathbb{R}^n$ can be expre
 \end{equation*}
 As long as $\vec{v}_0$ has some component $c_1 \neq 0$ along $\vec{x}_1$, then $A^k\vec{v}_0$ will converge to $\vec{x}_1$ as $k$ grows large. This is great, since $A^k\vec{v}_0$ can be recursively computed as $A(A^{k-1}\vec{v}_0)$, which is $k$ matrix-vector multiplications instead of $k$ matrix-matrix multiplications.
 
-But what happens if we choose an initial vector $\vec{v}_0$ with $c_1 = 0$? In this case, it is possible that this method will fail to converge. An example is given in example \ref{ex:power-sparse-no-convergence}. However, if we just choose a random $\vec{v}_0 \in \mathbb{R}^n$, we get $c_1 \neq 0$ with very high probability \cite[p.~53]{cornell}, so this is not particularly worrisome. Additionally, even if we are incredibly unlucky and choose a $\vec{v}_0$ that is deficient in $\vec{x}_1$, rounding errors in the computations will likely save us and push $c \neq 0$ \cite{pwr-rot}.
+But what happens if we choose an initial vector $\vec{v}_0$ with $c_1 = 0$? In this case, it is possible that this method will fail to converge. An example is given in example \ref{ex:power-sparse-no-convergence}. However, if we just choose a random $\vec{v}_0 \in \mathbb{R}^n$, we get $c_1 \neq 0$ with very high probability \cite[p.~53]{cornell}, so this is not particularly worrisome. Additionally, even if we are incredibly unlucky and choose a $\vec{v}_0$ that is deficient in $\vec{x}_1$, rounding errors in the computations will likely save us and push so that $c_1 \neq 0$ \cite{pwr-rot}.
 
 \begin{example}{efficient power method with bad $\vec{v}_0$}{power-sparse-no-convergence}
   Consider the matrix
@@ -260,130 +260,11 @@ But what happens if we choose an initial vector $\vec{v}_0$ with $c_1 = 0$? In t
 \end{example}
 
 \subsection{Implementation}
+Based on the power method (as presented in theorem \ref{thm:powermethod}), we present algorithm \ref{algo:domeigen} to compute the dominant eigenvector and eigenvalue of a given diagonalizable matrix. The algorithm may also converge for a non-diagonalizable matrix, but we do not guarantee this. The referenced subroutine \texttt{FirstNonzeroCol} gets the first nonzero column of the given matrix (or the first whose norm exceeds some tolerance), and $\texttt{SquareAndNorm}$ takes a given matrix $A$ and then returns $A^2$, normalized by the magnitude of its first nonzero column.
 
-The diagonalizability problem can be avoided in most cases because the matrices we are typically interested in are diagonalizable.
+In this implementation of the power method, we choose to compute $A^{2k} = A^kA^k$ rather than $A^{k+1} = A^kA$ at step $k$ because this is just as efficient (i.e. an $n \times n$ matrix multiplication) yet produces larger powers and therefore converges faster.
 
-[then the faster power method should be presented]
-
-[oh, and also finding eigenvalues from eigenvectors]
-
-\section{The QR Method}
-\subsection{Mathematical Formulation}
-Another iterative method to compute the eigenvectors of a matrix is known as the $QR$ method. The key insight behind this method is that similar matrices have the same eigenvalues.
-
-[now in order to compute the QR decomposition of $A$, we require that $A$ have independent columns; for a square matrix, this means that $A$ must be invertible?]
-
-\begin{example}{QR method on matrix without full rank}{qrnofull}
-  The QR method can fail when the given matrix does not have full rank. [check this] Consider the matrix
-  \begin{equation*}
-    A = \begin{bmatrix}1 & 0 \\ 1 & 0\end{bmatrix}
-  \end{equation*}
-  whose eigenvalues are $\lambda_1 = 1$, $\lambda_2 = 0$. But $A$'s QR decomposition is
-  \begin{equation*}
-    Q = -\frac{1}{\sqrt{2}}\begin{bmatrix}1 & 1 \\ 1 & -1\end{bmatrix}, \quad
-    R = \begin{bmatrix}\sqrt{2} & 0 \\ 0 & 0\end{bmatrix}
-  \end{equation*}
-  so we have
-  \begin{equation*}
-    A' = RQ = \begin{bmatrix}1 & 1 \\ 0 & 0\end{bmatrix}.
-  \end{equation*}
-  but the $QR$ decomposition of $A'$ is
-  \begin{equation*}
-    Q' = \begin{bmatrix}1 & 0 \\ 0 & 1\end{bmatrix}, \quad
-    R' = \begin{bmatrix}1 & 1 \\ 0 & 0\end{bmatrix}
-  \end{equation*}
-  so we have
-  \begin{equation*}
-    A'' = R'Q' = 
-  \end{equation*}
-  WAIT...I may have misunderstood the algorithm; I think it converges to a triangular matrix, which has eigenvalues on the diagonal???
-\end{example}
-
-The advantage of the QR method is that it does not suffer from the rounding errors that deflation-based methods do. However, it is also not as efficient, especially in many practical scenarios where we have large systems and only care about the most dominant eigenvectors. [cite last slide in that PPT, unless I get a better source]
-
-\subsection{Shifting for Better Efficiency}
-Fun stuff
-
-\section{Connection to Singular Vectors}
-Up until now, we have been almost exclusively concerned with finding the eigenvectors and eigenvalues of a matrix. But what about finding the singular vectors of a matrix?
-
-Note that the singular vectors of any $m \times n$ matrix $A$ are just the eigenvectors of $A^TA$, so by finding the eigenvectors we already have a procedure for finding the singular vectors. To make the connection even better, note that $A^TA$ is symmetric, so by theorem \ref{thm:spectral} it is in fact diagonalizable. We can thus use the power method to find the eigenvectors and eigenvalues of $A^TA$, which give us the singular vectors and values of $A$.
-
-\begin{theorem}{spectral theorem for real symmetric matrices}{spectral}
-  If $A$ is a real symmetric $n \times n$ matrix, then $A$ has $n$ orthonormal eigenvectors. The reader is referred to [cite] for a full proof of this theorem.
-\end{theorem}
-
-\section{Algorithm Comparison}
-Maybe make a table comparing power and QR, and add in some pretty graphs
-
-\section{Stuff I forgot about}
-
-\subsection{Singular Vectors and Values}
-We have seen that eigenvectors and eigenvalues are useful for understanding the behavior of square matrices, but what about the more general case of $m \times n$ matrices? To handle this, we define the notion of singular vectors and values in definition \ref{defn:singular}.
-
-\begin{definition}{singular vectors and values}{singular}
-  Given an $m \times n$ matrix $A$, we denote the eigenvectors of $A^TA$ as the \textit{singular vectors} of $A$. The corresponding eigenvalues of $A^TA$ are called the \textit{singular values} of $A$.
-\end{definition}
-
-\begin{theorem}{existence of singular vectors and values}{singular}
-  Any $m \times n$ matrix $A$ admits a decomposition $A = U \Sigma V^T$, where
-  \begin{itemize}
-    \item $U$ is an $m \times m$ orthogonal matrix
-    \item $\Sigma$ is an $m \times n$ matrix that is ``diagonal'' in that $\Sigma_{ij} = 0$ if $i \neq j$
-    \item $V$ is an $n \times n$ orthogonal matrix.
-  \end{itemize}
-\end{theorem}
-
-\section{Numerical Methods}
-In general, we have seen that it is possible to compute eigenvectors of an $n \times n$ matrix as the roots of an $n$-degree polynomial. Unfortunately, it is a well-known result that polynomials of degree $5$ and higher to not in general admit a solution by radicals [cite]...
-
-The most obvious way to compute the eigenvectors of $A$ is to first find the eigenvalues by $LU$ decomposition and then use elimination to find the null space of $A - \lambda I$.
-
-\subsection{The Power Algorithm}
-In this section, we present the \textit{power method}, a simple method for computing the eigenvectors and eigenvalues of $A$. As the name suggests, this method involves taking matrix powers $A^k$ for increasingly large values of $k$. To use the power method, we first choose a random starting vector $\vec{x}_0 \in \mathbb{R}^n$.
-
-\begin{theorem}{convergence of the power method}{pwrconv}
-  Consider an $n \times n$ matrix $A$. If $|\lambda_1| > |\lambda_i|$ whenever $i \neq 1$, then there exists some vector $\vec{x}_0 \in \mathbb{R}^n$ such that $A^k\vec{x}_0$ converges to a scalar multiple of $\vec{x}_1$ as $k$ grows arbitrarily large.
-\end{theorem}
-\begin{proof}
-  Suppose $A$ has $e > 1$ eigenvalues. Now let $\vec{x}_0 = $
-\end{proof}
-
-This suggests the method behind algorithm \ref{algo:domeigen}.
-
-There remain a few important questions to be addressed:
-\begin{itemize}
-  \item How quickly does the power method converge?
-  \item What about the case when $|\lambda_1| = |\lambda_2|$?
-  \item What about zero eigenvalues?
-  \item How do we choose a suitable initial $\vec{x}_0$?
-  \item What if $A$ does not have a full basis of eigenvectors? (i.e. our $\vec{x}_0$ might have a component orthogonal to the span of the eigenvectors---then convergence may not be guaranteed?)
-  \item What about degenerate eigenvalues?
-\end{itemize}
-
-
-Present algorithm
-Explain why it works
-Possibly bounds on accuracy?
-
-Conditions on convergence: if there are multiple eigenvalues with the same magnitude, this will not converge. (Since any symmetric matrix has real eigenvalues, this only occurs when $\lambda$ and $-\lambda$ are both eigenvalues of $A$.) [Is there some other condition on null spaces and stuff?] Also, the rate at which this converges depends greatly on the ratio between the two eigenvalues!
-
-Also, does this handle degenerate eigenvalues?
-
-We first present algorithm \ref{algo:pwrsym} for symmetric matrices only because it is highly illustrative. Additionally, [all we need for singular vectors]
-
-We square and then normalize by the first nonzero column of $A^n$. If such a column does not exist (i.e. $A^n$ is the zero matrix), then $A$ must have been a nilpotent matrix. In this case, the only eigenvalue can be zero, as proved in theorem \ref{thm:nilpotent}. In this case, the problem reduces to finding the null space of $A$.
-
-Now a matrix can have at most $n$ independent eigenvectors, so we only have to iterate up to $n$.
-
-\begin{theorem}{eigenvalues of a nilpotent matrix}{nilpotent}
-  If $A$ is a nilpotent matrix (i.e. $A^n$ is the zero matrix for some $n \in \mathbb{N}^+$), then the only eigenvalue of $A$ is $\lambda = 0$.
-  \begin{proof}
-    Suppose $\vec{x} \neq \vec{0}$ were an eigenvector of $A$ with eigenvalue $\lambda \neq 0$. Then $A^n\vec{x} = \lambda^n\vec{x}$, but if $\lambda \neq 0$, then this is some nonzero vector. However, $A^n = 0$, so we also have $A^n\vec{x} = \vec{0}$, a contradiction.
-  \end{proof}
-\end{theorem}
-
-\begin{algo}{\texttt{DominantEigen}}{domeigen}
+\begin{algo}{\texttt{DominantEigen1}}{domeigen}
   \begin{algorithm}[H]
     \SetKwInOut{Input}{input}
     \SetKwInOut{Parameter}{parameter}
@@ -405,9 +286,35 @@ Now a matrix can have at most $n$ independent eigenvectors, so we only have to i
       $i$ \store $i + 1$\;
     }
     $\vec{x}$ \store \FirstNonzeroCol{$A'$}\;
-    $\lambda$ \store $(A\vec{x}\cdot\vec{x}) / (\vec{x}\cdot\vec{x})$\;
+    $\lambda$ \store $(\vec{x}^TA\vec{x}) / (\vec{x}^T\vec{x})$\;
   \end{algorithm}
 \end{algo}
+
+Additionally, based on theorem \ref{thm:powermethod-sparse}, we implement the more efficient power method as algorithm \ref{algo:domeigen2}.
+
+\begin{algo}{\texttt{DominantEigen2}}{domeigen2}
+  \begin{algorithm}[H]
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Parameter}{parameter}
+    \SetKwInOut{Output}{output}
+    \SetKwFunction{Normalize}{Normalize}
+
+    \Input{real diagonalizable $n \times n$ matrix $A$}
+    \Parameter{tolerance $\varepsilon > 0$, max iterations $N > 0$}
+    \Output{dominant eigenpair $(\vec{x}, \lambda)$}
+    \BlankLine
+    $\vec{x}$ \store choose random vector in $\mathbb{R}^n$\;
+    $\vec{x}$ \store \Normalize{$\vec{x}$}\;
+    $i$ \store $0$\tcp*{number of iterations so far}
+    \While{$\lVert A\vec{x} - \vec{x}\rVert > \varepsilon$ {\normalfont and } $i < N$}{
+      $\vec{x}$ \store \Normalize{$A\vec{x}$}\;
+      $i$ \store $i + 1$\;
+    }
+    $\lambda$ \store $(\vec{x}^TA\vec{x}) / (\vec{x}^T\vec{x})$\;
+  \end{algorithm}
+\end{algo}
+
+Finally, we can use the deflation method from theorem \ref{thm:hotelling-deflation} to write a general power method routine (algorithm \ref{algo:pwrsym}) that computes all the eigenvectors and eigenvalues of a symmetric matrix.
 
 \begin{algo}{\texttt{EigenPowerSymmetric}}{pwrsym}
   \begin{algorithm}[H]
@@ -422,16 +329,138 @@ Now a matrix can have at most $n$ independent eigenvectors, so we only have to i
     \BlankLine
     $xs$ $\leftarrow$ empty list\;
     $\lambda s$ $\leftarrow$ empty list\;
-    $Z$ $\leftarrow$ $n \times n$ zero matrix\;
     \For{$i \in [n]$}{
-      $\vec{x}$, $\lambda$ $\leftarrow$ \DominantEigen($S - Z$)\;
-      $Z$ $\leftarrow$ $Z + \lambda\vec{x}\vec{x}^T$\;
+      $\vec{x}$, $\lambda$ $\leftarrow$ \DominantEigen{$S$}\;
+      $S$ \store $S - (\lambda/(\vec{x}^T\vec{x}))\vec{x}\vec{x}^T$\;
       append $\vec{x}$ to $xs$\;
       append $\lambda$ to $\lambda s$\;
     }
   \end{algorithm}
 \end{algo}
 
+\section{The QR Method}
+\subsection{Mathematical Formulation}
+Another iterative method to compute the eigenvectors of a matrix is known as the $QR$ method. The key insight behind this method is that similar matrices have the same eigenvalues, a fact proven in theorem \ref{thm:similar}.
+
+\begin{theorem}{similar matrices have the same eigenvalues}{similar}
+  Suppose $A$ and $C$ are similar square matrices. Then if $\lambda \in \mathbb{R}$ is an eigenvalue of $A$ if and only if it is an eigenvalue of $C$.
+  
+\end{theorem}
+\begin{proof}
+  Suppose $A = BCB^{-1}$. Now consider an eigenvalue $\lambda$ of $A$ with eigenvector $\vec{x}$. Then
+  \begin{equation*}
+    A\vec{x} = \lambda\vec{x} \implies BCB^{-1}\vec{x} = \lambda\vec{x}.
+  \end{equation*}
+  But $B$ is invertible, so we can multiply on the left by $B^{-1}$ to obtain:
+  \begin{equation*}
+    B^{-1}BCB^{-1} = B^{-1}(\lambda\vec{x}) \implies C(B^{-1}\vec{x}) = \lambda(B^{-1}\vec{x}).
+  \end{equation*}
+  Now since $B^{-1}$ is invertible, $B^{-1}\vec{x} \neq \vec{0}$ if $\vec{x} \neq 0$ (i.e. $B^{-1}$ has a trivial null space), which means that we have found an eigenvector $B^{-1}\vec{x}$ of $C$ with eigenvalue $\lambda$. An identical argument in the other direction shows that any eigenvalue of $C$ is also an eigenvalue of $A$, which concludes the proof.
+\end{proof}
+
+Additionally, recall that the eigenvalues of a triangular matrix lie on its diagonal \cite[p.~294]{strang}. (This follows from the fact that $\det(A - \lambda I) = 0$ and the determinant of triangular $A$ is the product of the diagonal entries.) This fact, combined with theorem \ref{thm:similar}, suggests the following method \cite[p.~530]{strang} of computing the eigenvalues of $A$:
+\begin{enumerate}
+  \item Somehow transform $A$ into a similar triangular matrix $B$.
+  \item Read the eigenvalues off of the diagonal entires of $B$.
+\end{enumerate}
+This is not exactly the QR method, but it captures much of the intuition behind the QR method, which is presented in theorem \ref{thm:qr}.
+
+\begin{theorem}{the QR method \cite[p.~530]{strang}}{qr}
+  Suppose we have the matrix $A$. We form the sequence
+  \begin{align*}
+    A_0 &= A, \quad A_0 = Q_0R_0 \\
+    A_1 &= R_0Q_0, \quad A_1 = Q_1R_1 \\
+    A_2 &= R_1Q_1, \quad A_2 = Q_2R_2 \\
+    \vdots
+  \end{align*}
+  which essentially takes the QR decomposition of $A_k$ at each step and reverses the factors to find the next $A_{k+1}$. In many cases, as $k \to \infty$, the $A_k$'s approach an upper triangular matrix that is similar to $A$.
+\end{theorem}
+\begin{proof}
+  It is not always true that the $A_k$'s tend to a triangular matrix, but it is always true that $A_k$ is similar to $A$. To show this, let $A = QR$ and $A_1 = RQ$ for orthogonal $Q$ and triangular $R$. But note that
+  \begin{equation*}
+    QA_1Q^T = QRQQ^T = QR = A
+  \end{equation*}
+  so there exists a matrix $B$ such that $A = BA_1B^{-1}$, namely $B = Q^T$. At each step, the new $A_{k+1}$ is similar to the previous $A_k$, as desired.
+\end{proof}
+
+The basic QR method, as presented in theorem \ref{thm:qr}, does not always converge. An example of this, taken from \cite{cornell-qr}, is given in example \ref{ex:qr-fail}.
+
+\begin{example}{QR algorithm failure}{qr-fail}
+  Consider the matrix
+  \begin{equation*}
+    A = \begin{bmatrix}0 & 1 \\ 1 & 0\end{bmatrix}
+  \end{equation*}
+  which permits the QR decomposition
+  \begin{equation*}
+    Q = \begin{bmatrix}0 & 1 \\ 1 & 0\end{bmatrix}, \quad\quad
+    R = \begin{bmatrix}1 & 0 \\ 0 & 1\end{bmatrix}.
+  \end{equation*}
+  But $A' = RQ = A$, so the algorithm gets stuck and does not converge to a triangular matrix at all.
+\end{example}
+
+There are more advanced techniques for shifting the $A_k$'s that make for better convergence, but they are somewhat beyond the scope of this paper.
+
+[address the thing with QR ordinarily requiring independent columns, perhaps use example [1 0 ; 1 0]]
+
+[mention/verify that it's actually non-trivial to get from eigenvalues to eigenvectors]
+
+The advantage of the QR method is that it does not suffer from the rounding errors that deflation-based methods do. However, it is also not as efficient, especially in many practical scenarios where we have large systems and only care about the most dominant eigenvectors. [cite last slide in that PPT, unless I get a better source]
+
+\subsection{Implementation}
+The QR method from theorem \ref{thm:qr} can be more or less directly transcribed into an algorithm:
+
+\begin{algo}{\texttt{EigenQR}}{qr}
+  \begin{algorithm}[H]
+    \SetKwInOut{Input}{input}
+    \SetKwInOut{Parameter}{parameter}
+    \SetKwInOut{Output}{output}
+    \SetKwFunction{QRDecomposition}{QRDecomposition}
+
+    \Input{real $n \times n$ matrix $A$}
+    \Parameter{tolerance $\varepsilon > 0$, max iterations $N > 0$}
+    \Output{eigenvalues $\lambda s$}
+    \BlankLine
+    $Q,R$ \store \QRDecomposition{$A$}\;
+    $A'$ \store $RQ$\;
+    $i$ \store $0$\tcp*{number of iterations so far}
+    \While{$\lVert A' - A\rVert > \varepsilon$ {\normalfont and } $i < N$}{
+      $Q,R$ \store \QRDecomposition{$A'$}\;
+      $A$ \store $A'$\;
+      $A'$ \store $RQ$\;
+      $i$ \store $i + 1$\;
+    }
+    $\lambda s$ \store diagonal entries of $A'$\;
+  \end{algorithm}
+\end{algo}
+
+\section{Connection to Singular Vectors}
+Up until now, we have been almost exclusively concerned with finding the eigenvectors and eigenvalues of a matrix. But what about finding the singular vectors of a matrix?
+
+Note that the singular vectors of any $m \times n$ matrix $A$ are just the eigenvectors of $A^TA$, so by finding the eigenvectors we already have a procedure for finding the singular vectors. To make the connection even better, note that $A^TA$ is symmetric, so by theorem \ref{thm:spectral} it is in fact diagonalizable. We can thus reliably use the power method to find both the eigenvectors and eigenvalues of $A^TA$, which give us the singular vectors and values of $A$.
+
+\begin{theorem}{spectral theorem for real symmetric matrices}{spectral}
+  If $A$ is a real symmetric $n \times n$ matrix, then $A$ has $n$ orthonormal eigenvectors. The reader is referred to [cite] for a full proof of this theorem.
+\end{theorem}
+
+\section{Algorithm Comparison}
+Maybe make a table comparing power and QR, and add in some pretty graphs
+
+Conditions on convergence: if there are multiple eigenvalues with the same magnitude, this will not converge. (Since any symmetric matrix has real eigenvalues, this only occurs when $\lambda$ and $-\lambda$ are both eigenvalues of $A$.) [Is there some other condition on null spaces and stuff?] Also, the rate at which this converges depends greatly on the ratio between the two eigenvalues!
+
+Also, does this handle degenerate eigenvalues?
+
+We first present algorithm \ref{algo:pwrsym} for symmetric matrices only because it is highly illustrative. Additionally, [all we need for singular vectors]
+
+We square and then normalize by the first nonzero column of $A^n$. If such a column does not exist (i.e. $A^n$ is the zero matrix), then $A$ must have been a nilpotent matrix. In this case, the only eigenvalue can be zero, as proved in theorem \ref{thm:nilpotent}. In this case, the problem reduces to finding the null space of $A$.
+
+Now a matrix can have at most $n$ independent eigenvectors, so we only have to iterate up to $n$.
+
+\begin{theorem}{eigenvalues of a nilpotent matrix}{nilpotent}
+  If $A$ is a nilpotent matrix (i.e. $A^n$ is the zero matrix for some $n \in \mathbb{N}^+$), then the only eigenvalue of $A$ is $\lambda = 0$.
+  \begin{proof}
+    Suppose $\vec{x} \neq \vec{0}$ were an eigenvector of $A$ with eigenvalue $\lambda \neq 0$. Then $A^n\vec{x} = \lambda^n\vec{x}$, but if $\lambda \neq 0$, then this is some nonzero vector. However, $A^n = 0$, so we also have $A^n\vec{x} = \vec{0}$, a contradiction.
+  \end{proof}
+\end{theorem}
 
 Algorithm \ref{algo:pwrsym} also gives us an easy way to compute the singular values and singular vectors of any real matrix $A$: simply apply $\textrm{\texttt{EigenPowerSymmetric}}(A^TA)$.
 
@@ -456,16 +485,6 @@ Finding the eigenvectors of a general square matrix (not necessarily symmetric) 
 \end{example}
 
 \subsection{The QR Algorithm}
-\begin{algo}{\texttt{EigenQR}}{qr}
-  \begin{algorithm}[H]
-    \SetKwInOut{Input}{input}
-    \SetKwInOut{Parameter}{parameter}
-    \SetKwInOut{Output}{output}
-
-    \Input{real $m \times n$ matrix $A$ with independent columns}
-    \Output{eigenvectors $\vec{x}_i$ and corresponding eigenvalues $\lambda_i$}
-  \end{algorithm}
-\end{algo}
 
 \begin{algo}{\texttt{Singular}}{singular}
   \begin{algorithm}[H]
@@ -496,6 +515,9 @@ Compare the two methods
   \bibitem{deflation} \url{http://www.macs.citadel.edu/chenm/344.dir/08.dir/lect4_2.pdf}
   \bibitem{matmul} \url{https://www.cs.toronto.edu/\~yuvalf/Limitations.pdf}
   \bibitem{cornell} Blum, Hopcroft, and Kannan. \emph{Foundations of Data Science}. \url{https://www.cs.cornell.edu/jeh/book.pdf}
+  \bibitem{spanish} \url{http://ergodic.ugr.es/cphys/lecciones/fortran/power_method.pdf}
+  \bibitem{strang} Strang. \emph{Introduction to Linear Algebra}, fifth edition.
+  \bibitem{cornell-qr} \url{http://pi.math.cornell.edu/\~web6140/TopTenAlgorithms/QRalgorithm.html}
 \end{thebibliography}
 
 \end{document}
