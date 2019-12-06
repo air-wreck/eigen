@@ -152,13 +152,13 @@ function Singular(A; tol=0.00001, max_iter=1000, method=:power)
 end
 
 # examples that break my current thing
-ex1 = [0 -1 ; 1 0]  # rotation pi/2, no real eigenvectors
-ex2 = [0 1 ; 0 0]   # only one eigenvector, wth eigenvalue 0
-ex3 = [0 1 ; 1 0]   # neither eigenvalue is dominant
-ex4 = [0 -1 0 ; 1 0 0 ; 0 0 1]  # dominant eigenvalues are actually complex
+ex1 = [0 -1 ; 1 0];  # rotation pi/2, no real eigenvectors
+ex2 = [0 1 ; 0 0];   # only one eigenvector, wth eigenvalue 0
+ex3 = [0 1 ; 1 0];   # neither eigenvalue is dominant
+ex4 = [0 -1 0 ; 1 0 0 ; 0 0 1];  # dominant eigenvalues are actually complex
 
 # DominantEigen1 is better on
-ex3 = [1 0 ; 1 0]
+ex3 = [1 0 ; 1 0];
 
 # DominantEigen2 is better on
 # ex4 =

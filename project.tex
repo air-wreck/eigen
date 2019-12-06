@@ -8,6 +8,8 @@
 \usepackage[breakable, skins]{tcolorbox}
 \usepackage[vlined]{algorithm2e}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{float}
 
 % make the document title look pretty fancy
 \makeatletter
@@ -154,7 +156,32 @@ Note that diagonalizability is a sufficient condition for the power method to co
 \end{example}
 
 \subsection{Convergence Analysis}
-The power method is a particularly elegant method for computing the dominant eigenvector of a matrix, but how efficient is it?
+The power method is a particularly elegant method for computing the dominant eigenvector of a matrix, but how efficient is it? In other words, as we take successive powers $A^k$, how quickly does $\lambda_1$ dominate the result? What matters here is comparatively how much larger $|\lambda_1|$ is than $|\lambda_2|$: the power method converges proportional to $|\lambda_1 / \lambda_2|$ \cite[p.~529]{strang}.
+
+More formally, we can prove this by an argument taken from \cite{mit-sensitivity}: if $A$ is diagonalizable, then we can express any $\vec{v} \in \mathbb{R}^n$ as
+\begin{equation*}
+  \vec{v} = c_1\vec{x}_1 + c_2\vec{x}_2 + \cdots + c_n\vec{x}_n
+\end{equation*}
+where we assume $c_1 \neq 0$ for the algorithm to converge. Now after $k$ steps, we have
+\begin{align*}
+  A^k\vec{v} &= \lambda_1^k c_1\vec{x}_1 + \lambda_2^k c_2\vec{x}_2 + \cdots + \lambda_n^k c_n\vec{x}_n \\
+             &= \lambda_1^k \left[c_1\vec{x}_1 + \left(\frac{\lambda_2}{\lambda_1}\right)^k c_2\vec{x}_2 + \cdots + \left(\frac{\lambda_n}{\lambda_1}\right)^k c_n\vec{x}_n\right]
+\end{align*}
+where $|\lambda_i / \lambda_1| < 1$ whenever $i \ge 2$ since $\lambda_1$ is the dominant eigenvalue. Now as $k \to \infty$, the $(\lambda_2 / \lambda_1)$ term will dominate the error, so we expect the algorithm to converge proportionally to $|\lambda_2 / \lambda_1|^k$.
+
+We can test this numerically with the matrix
+\begin{equation*}
+  A = \begin{bmatrix}23 & 5 & 2 \\ 5 & 23 & 2 \\ 2 & 2 & 26\end{bmatrix}
+\end{equation*}
+which has eigenvalues $\lambda_1 = 30$, $\lambda_2 = 24$, and $\lambda_3 = 18$; the corresponding eigenvectors are $\vec{x}_1 = (1,1,1)$, $\vec{x}_2 = (1,1,-2)$, and $\vec{x}_3 = (1,-1,0)$. For the first twenty iterations of the power method, we get something like figure \ref{powermethod-plot}, which is fairly close to the expected $(24/30)^k = (4/5)^k$ decay rate. The Julia code for generating the plot is included in the appendix.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[width=0.75\textwidth]{power-method.pdf}
+    \caption{Power method error for twenty steps of the algorithm, plotted against the expected error given by $|\lambda_2 / \lambda_1|^k$}
+    \label{powermethod-plot}
+  \end{center}
+\end{figure}
 
 \subsection{Rayleigh Quotients}
 Up until now, we have developed a method for finding the eigenvectors of a matrix, but what about the eigenvalues? Based on definition \ref{defn:eigen}, it is tempting to just take an eigenvector $\vec{x} \in \mathbb{R}^n$, compute $A\vec{x} = \lambda\vec{x}$, and then see how much the components of $\vec{x}$ were scaled to find $\lambda$.
@@ -212,9 +239,9 @@ is a symmetric matrix that has eigenvalues $\lambda_2, \ldots, \lambda_n$ and co
 \end{equation*}
 to which we can apply the power method to pick off $\vec{x}_3$ and $\lambda_3$. We keep on going until we have found all $n$ eigenvectors, a technique known as \textit{deflation}.
 
-In fact, even if $A$ is not symmetric, we can apply a similar deflation technique for finding all the eigenvalues of $A$, although we don't get any additional eigenvectors beyond the dominant one. The reader is referred to \cite{deflation} for a full explanation, but in general the procedure is given in theorem \ref{thm:hotelling-deflation}. In the case when we take unit eigenvectors of a symmetric matrix, this procedure becomes the previously described deflation procedure.
+In fact, even if $A$ is not symmetric, we can apply a similar deflation technique for finding all the eigenvalues of $A$, although we don't get any additional eigenvectors beyond the dominant one. The reader is referred to \cite{deflation} for a full explanation, but a more general deflation procedure known as Hotelling's deflation is given in theorem \ref{thm:hotelling-deflation}. In the case when we take unit eigenvectors of a symmetric matrix, this procedure becomes the previously described deflation procedure. There exist other techniques that are even more robust against, for instance, rounding errors \cite{deflation-robots}, but they are beyond the scope of this paper.
 
-\begin{theorem}{Hotelling deflation}{hotelling-deflation}
+\begin{theorem}{Hotelling's deflation}{hotelling-deflation}
   Suppose $A$ is a matrix with eigenvalues $\lambda_1, \ldots, \lambda_k$ and corresponding eigenvalues $\vec{x}_1, \ldots, \vec{x}_k$. Then the matrix
   \begin{equation*}
     B = A - \frac{\lambda_1}{\vec{x}_1^T\vec{x}}\vec{x}_1\vec{x}_1^T
@@ -340,7 +367,7 @@ Finally, we can use the deflation method from theorem \ref{thm:hotelling-deflati
 
 \section{The QR Method}
 \subsection{Mathematical Formulation}
-Another iterative method to compute the eigenvectors of a matrix is known as the $QR$ method. The key insight behind this method is that similar matrices have the same eigenvalues, a fact proven in theorem \ref{thm:similar}.
+Another iterative method to compute the eigenvalues of a matrix is known as the $QR$ method. The key insight behind this method is that similar matrices have the same eigenvalues, a fact proven in theorem \ref{thm:similar}.
 
 \begin{theorem}{similar matrices have the same eigenvalues}{similar}
   Suppose $A$ and $C$ are similar square matrices. Then if $\lambda \in \mathbb{R}$ is an eigenvalue of $A$ if and only if it is an eigenvalue of $C$.
@@ -398,11 +425,20 @@ The basic QR method, as presented in theorem \ref{thm:qr}, does not always conve
   But $A' = RQ = A$, so the algorithm gets stuck and does not converge to a triangular matrix at all.
 \end{example}
 
-There are more advanced techniques for shifting the $A_k$'s that make for better convergence, but they are somewhat beyond the scope of this paper.
+There are more advanced techniques for shifting the $A_k$'s to improve the algorithm's convergence, but they are somewhat beyond the scope of this paper. The basic QR method is the basis for many
 
 [address the thing with QR ordinarily requiring independent columns, perhaps use example [1 0 ; 1 0]]
 
-[mention/verify that it's actually non-trivial to get from eigenvalues to eigenvectors]
+\subsection{Going from Eigenvalues to Eigenvectors}
+The QR method, as presented in theorem \ref{thm:qr}, will find all of the eigenvalues of $A$, but now we are faced with the opposite problem that we had with the power method: how do we go from eigenvalues to the corresponding eigenvectors? Of course, by definition $\vec{x} \in N(A - \lambda I)$, so we could use elimination to get the reduced row echelon form of $A - \lambda I$ and thus the null space, but is there a more sophisticated technique we could employ?
+
+One way we could do it is the inverse power method. This method relies on a few key observations [POSSIBLY PROVE...not too hard, but time?]:
+\begin{itemize}
+  \item $A$ and $A - \mu I$ have the same eigenvectors.
+  \item If the $\lambda_i$'s are the eigenvalues of $A$, then $1/(\lambda_i - \mu_i$'s are the eigenvalues of $A - \mu I$.
+  \item $(A - \mu I)$ and $(A - \mu I)^{-1}$ have the same eigenvectors but reciprocal eigenvalues. (In general, as long as $\mu$ is not an eigenvalue of $A$, $A - \mu I$ will be invertible, since $\det(A - \mu I) \neq 0$ if $\mu$ is not an eigenvalue.)
+\end{itemize}
+Suppose we have the eigenvalues $\lambda_1, \ldots, \lambda_n$ of $A$, and we wish to find the eigenvector corresponding to, say, $\lambda_1$. We can take some $\mu$ that is closer to $\lambda_1$ than it is to all the other eigenvalues but is not an eigenvalue itself. Then $(A - \mu I)$
 
 The advantage of the QR method is that it does not suffer from the rounding errors that deflation-based methods do. However, it is also not as efficient, especially in many practical scenarios where we have large systems and only care about the most dominant eigenvectors. [cite last slide in that PPT, unless I get a better source]
 
@@ -445,9 +481,8 @@ Note that the singular vectors of any $m \times n$ matrix $A$ are just the eigen
 \section{Algorithm Comparison}
 Maybe make a table comparing power and QR, and add in some pretty graphs
 
-Conditions on convergence: if there are multiple eigenvalues with the same magnitude, this will not converge. (Since any symmetric matrix has real eigenvalues, this only occurs when $\lambda$ and $-\lambda$ are both eigenvalues of $A$.) [Is there some other condition on null spaces and stuff?] Also, the rate at which this converges depends greatly on the ratio between the two eigenvalues!
-
-Also, does this handle degenerate eigenvalues?
+\section{Appendix: Julia Code Samples}
+In this appendix, I provide Julia implementations for the major algorithms presented. The Julia code for generating the plots in this paper is also included.
 
 We first present algorithm \ref{algo:pwrsym} for symmetric matrices only because it is highly illustrative. Additionally, [all we need for singular vectors]
 
@@ -506,8 +541,6 @@ Finding the eigenvectors of a general square matrix (not necessarily symmetric) 
   \end{algorithm}
 \end{algo}
 
-\section{Results}
-Compare the two methods
 
 \begin{thebibliography}{9}
   \bibitem{pwr-rot} \url{https://www.cs.huji.ac.il/\~csip/tirgul2.pdf}
@@ -518,6 +551,7 @@ Compare the two methods
   \bibitem{spanish} \url{http://ergodic.ugr.es/cphys/lecciones/fortran/power_method.pdf}
   \bibitem{strang} Strang. \emph{Introduction to Linear Algebra}, fifth edition.
   \bibitem{cornell-qr} \url{http://pi.math.cornell.edu/\~web6140/TopTenAlgorithms/QRalgorithm.html}
+  \bibitem{deflation-robots} \url{http://www.robots.ox.ac.uk/\~sjrob/Teaching/EngComp/ecl4.pdf}
 \end{thebibliography}
 
 \end{document}
