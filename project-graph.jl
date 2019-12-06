@@ -1,4 +1,4 @@
-# project.jl
+# project-graph.jl
 #
 # 21-241 Final Project, Fall 2019
 # Eric Zheng, Section 4K
