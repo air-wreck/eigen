@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
@@ -10,6 +11,10 @@
 \usepackage{hyperref}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{beramono}
 
 % make the document title look pretty fancy
 \makeatletter
@@ -26,26 +31,58 @@
 % set up fancy color box theorems
 \tcbuselibrary{theorems}
 \newtcbtheorem[number within=section]{definition}{Definition}{
+  breakable,
+  enhanced,
   colback=red!5,
   colframe=red!35!black,
   fonttitle=\bfseries
 }{defn}
 \newtcbtheorem[number within=section]{theorem}{Theorem}{
+  breakable,
+  enhanced,
   colback=blue!5,
   colframe=blue!35!black,
   fonttitle=\bfseries
 }{thm}
 \newtcbtheorem[number within=section]{example}{Example}{
+  breakable,
+  enhanced,
   colback=green!5,
   colframe=green!35!black,
   fonttitle=\bfseries
 }{ex}
 \newtcbtheorem[number within=section]{algo}{Algorithm}{
+  breakable,
+  enhanced,
   colback=gray!5,
   colframe=gray!35!black,
   fonttitle=\bfseries
 }{algo}
-\newtheorem*{remark}{Remark}
+
+% Julia definition (c) 2014 Jubobs, from TeX Stack Exchange
+% tweaked a bit for prettiness
+\lstdefinelanguage{Julia}%
+  {morekeywords={abstract,break,case,catch,const,continue,do,else,elseif,%
+      end,export,false,for,function,immutable,import,importall,if,in,%
+      macro,module,otherwise,quote,return,switch,true,try,type,typealias,%
+      using,while},%
+   sensitive=true,%
+   alsoother={$},%
+   morecomment=[l]\#,%
+   morecomment=[n]{\#=}{=\#},%
+   morestring=[s]{"}{"},%
+   morestring=[m]{'}{'},%
+}[keywords,comments,strings]%
+\lstset{%
+    language         = Julia,
+    numbers          = left,
+    stepnumber       = 1,
+    basicstyle       = \ttfamily\footnotesize,
+    keywordstyle     = \bfseries\color{blue},
+    stringstyle      = \color{magenta},
+    commentstyle     = \color{green},
+    showstringspaces = false,
+}
 
 % math commands
 \let\vec\mathbf
@@ -61,8 +98,8 @@
 
 \begin{abstract}
   In this document, I present some background on numerical methods for computing
-  the eigenvectors and singular vectors of matrices. A Julia implementation of
-  the power and QR methods is given, and the two algorithms are compared
+  the eigenvectors and singular vectors of matrices. Julia implementations of
+  the power and QR methods are given, and the two algorithms are compared.
 \end{abstract}
 
 \tableofcontents
@@ -88,13 +125,9 @@ That is to say, $\lambda \in \mathbb{R}^n$ is an eigenvalue of $A$ if and only i
   Some $\lambda \in \mathbb{R}^n$ is an eigenvalue of the $n \times n$ matrix $A$ if and only if $\det (A - \lambda I) = 0$. We call $\det (A - \lambda I)$ the \textit{characteristic polynomial} for $A$. The problem then becomes identifying the roots of this polynomial.
 \end{theorem}
 
-Once the eigenvalues have been computed, we can find the corresponding eigenvectors by finding the null space of $A - \lambda I$, for example by using the reduced row echelon form. The key drawback of this method is that polynomial root-finding is sensitive to small numerical errors.
+Once the eigenvalues have been computed, we can find the corresponding eigenvectors by finding the null space of $A - \lambda I$, for example by using the reduced row echelon form. The key drawback of this method is that polynomial root-finding is sensitive to small numerical errors \cite{spanish}.
 
-\begin{example}{sensitivity of polynomial root finding}{sensitivity}
-  Consider the matrix
-\end{example}
-
-However, the equivalence of eigenvalue-finding and polynomial root-finding gives some insight into how we could approach the problem with more advanced methods. It is known that polynomials of degree five and higher do not in general have a solution by radicals [cite], although we can use iterative methods to get arbitrarily good approximations of these roots. In the following sections, we will apply similar iterative methodologies to find the eigenvectors and eigenvalues of matrices.
+However, the equivalence of eigenvalue-finding and polynomial root-finding gives some insight into how we could approach the problem with more advanced methods. It is known that polynomials of degree five and higher do not in general have an exact solution by radicals \cite{abel}, although we can use iterative methods to get arbitrarily good approximations of these roots. In the following sections, we will apply similarly iterative methodologies to find the eigenvectors and eigenvalues of matrices.
 
 \section{The Power Method}
 \subsection{Mathematical Formulation}
@@ -126,11 +159,15 @@ One issue with the power method is that it assumes that $A$ is both diagonalizab
 \begin{example}{power method on a non-diagonalizable matrix}{powernodiag}
   The power method can fail when a matrix is not diagonalizable. Consider the matrix
   \begin{equation*}
-    A = \begin{bmatrix}0 & 1 \\ 0 & 0\end{bmatrix}.
+    A = \begin{bmatrix}0 & -1 & 1 \\ 1 & 0 & 1 \\ 0 & 0 & 1\end{bmatrix}.
   \end{equation*}
-  $A$ has eigenvalue $\lambda = 0$ with eigenvector $(1, 0)$. But $A$ is nilpotent, so the columns of $A^k$ will never approach a multiple of $(1, 0)$.
-
-  ACTUALLY...rotation matrix might be a better example, since this can be thought of more as a failure around zero (i.e. $(0,0)$ is a legitimate multiple of $(1,0)$)
+  The only real eigenvalue of $A$ is $\lambda = 1$, with corresponding eigenvalue $\vec{x} = (0,1,1)$. But consider the powers of $A$:
+  \begin{equation*}
+    A^2 = \begin{bmatrix}-1 & 0 & 0 \\ 0 & -1 & 2 \\ 0 & 0 & 1\end{bmatrix},\quad
+    A^3 = \begin{bmatrix}0 & 1 & -1 \\ -1 & 0 & 1 \\ 0 & 0 & 1\end{bmatrix},\quad
+    A^4 = \begin{bmatrix}1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & 1\end{bmatrix}.
+  \end{equation*}
+  Since $A^4 = I$, higher powers will cycle and we never converge.
 \end{example}
 
 \begin{example}{power method without a dominant eigenvalue}{powernodom}
@@ -138,7 +175,7 @@ One issue with the power method is that it assumes that $A$ is both diagonalizab
   \begin{equation*}
     A = \begin{bmatrix}0 & 1 \\ 1 & 0\end{bmatrix}.
   \end{equation*}
-  Now $A$ is clearly diagonalizable (it's already diagonal), but its eigenvalues are $\lambda = \pm 1$, so $A$ does not have a dominant eigenvalue. If we attempt the power method, we find that $A^2 = I$, so the successive powers $A^k$ will oscillate between $A$ (when $k$ is odd) and $I$ (when $k$ is even). Neither of these contain the eigenvectors of $A$, which are $(1,1)$ and $(1,-1)$.
+  Now $A$ is clearly diagonalizable (it's symmetric), but its eigenvalues are $\lambda = \pm 1$, so $A$ does not have a dominant eigenvalue. If we attempt the power method, we find that $A^2 = I$, so the successive powers $A^k$ will oscillate between $A$ (when $k$ is odd) and $I$ (when $k$ is even). Neither of these contain the eigenvectors of $A$, which are $(1,1)$ and $(1,-1)$.
 \end{example}
 
 Note that diagonalizability is a sufficient condition for the power method to converge (when combined with a dominant eigenvalue), but it is not necessary. Example \ref{ex:powerworksnodiag} gives a matrix that is not diagonalizable yet converges under the power method.
@@ -206,12 +243,12 @@ The issue is that our algorithm only generates an approximation to $\vec{x}$, no
     \mu_1 &= 2 / 1 = 2 \\
     \mu_2 &= 0.00001 / 0.00001 = 1
   \end{align*}
-  which would give $\lambda \approx 3/2$, which is significantly off from the true value $\lambda = 2$, despite the very good eigenvector approximation.
+  which would give $\lambda_1 \approx 3/2$, which is significantly off from the true value $\lambda_1 = 2$, despite the very good eigenvector approximation.
 \end{example}
 
 So how should we compute eigenvalues given a corresponding eigenvector? A common way to do this is via the Rayleigh quotient, given in definition \ref{defn:rayleigh}.
 
-\begin{definition}{Rayleigh quotient CITE}{rayleigh}
+\begin{definition}{Rayleigh quotient \cite{spanish}}{rayleigh}
   If we have an approximation $\vec{x} \in \mathbb{R}^n$ for an eigenvector of $A$, then the \textit{Rayleigh quotient} approximation for the corresponding eigenvalue $\lambda$ is given by
   \begin{equation*}
     \lambda \approx \frac{\vec{x}^TA\vec{x}}{\vec{x}^T\vec{x}}.
@@ -220,9 +257,9 @@ So how should we compute eigenvalues given a corresponding eigenvector? A common
 
 This can be thought of as the average of the $\mu_i$'s weighted by the square of each component \cite{mit-sensitivity}, so errors around small components affect the overall eigenvalue approximation very little. For example, using the same numbers as example \ref{ex:naive-eigen-avg}, we get
 \begin{equation*}
-  \lambda \approx \frac{\hat{\vec{x}}_1^T A \hat{\vec{x}}_1}{\hat{\vec{x}}^T\hat{\vec{x}}} = \frac{2.0000000001}{1.0000000001} \approx 1.999999999
+  \lambda_1 \approx \frac{\hat{\vec{x}}_1^T A \hat{\vec{x}}_1}{\hat{\vec{x}}_1^T\hat{\vec{x}}_1} = \frac{2.0000000001}{1.0000000001} \approx 1.999999999
 \end{equation*}
-which is much closer to the true value of $\lambda = 2$.
+which is much closer to the true value of $\lambda_1 = 2$.
 
 \subsection{Deflation}
 One limitation is that the power method, as presented in theorem \ref{thm:powermethod}, only finds the dominant eigenvector of a matrix. For many physical systems, the behavior is determined mostly by the dominant eigenvector, so this is sufficient \cite{spanish}. However, in the special case where $A$ is symmetric, we can actually do better. By the spectral theorem (restated in theorem \ref{thm:spectral}), we can take the spectral decomposition of symmetric $A$ into orthogonal $X$ and diagonal $\Lambda$, as in
@@ -287,7 +324,7 @@ But what happens if we choose an initial vector $\vec{v}_0$ with $c_1 = 0$? In t
 \end{example}
 
 \subsection{Implementation}
-Based on the power method (as presented in theorem \ref{thm:powermethod}), we present algorithm \ref{algo:domeigen} to compute the dominant eigenvector and eigenvalue of a given diagonalizable matrix. The algorithm may also converge for a non-diagonalizable matrix, but we do not guarantee this. The referenced subroutine \texttt{FirstNonzeroCol} gets the first nonzero column of the given matrix (or the first whose norm exceeds some tolerance), and $\texttt{SquareAndNorm}$ takes a given matrix $A$ and then returns $A^2$, normalized by the magnitude of its first nonzero column.
+Based on the power method (as presented in theorem \ref{thm:powermethod}), we present algorithm \ref{algo:domeigen} to compute the dominant eigenvector and eigenvalue of a given diagonalizable matrix. The algorithm may also converge for a non-diagonalizable matrix, but we do not guarantee this. The referenced subroutine \texttt{FirstNonzeroCol} gets the first nonzero column of the given matrix (or the first whose norm exceeds some tolerance), and $\texttt{SquareAndNorm}$ takes a given matrix $A$ and then returns $A^2$, normalized by the magnitude of its first nonzero column.\footnote{If $A^k$ does not have any nonzero columns, then $A$ is nilpotent; its only eigenvalue is $\lambda = 0$.}
 
 In this implementation of the power method, we choose to compute $A^{2k} = A^kA^k$ rather than $A^{k+1} = A^kA$ at step $k$ because this is just as efficient (i.e. an $n \times n$ matrix multiplication) yet produces larger powers and therefore converges faster.
 
@@ -370,8 +407,7 @@ Finally, we can use the deflation method from theorem \ref{thm:hotelling-deflati
 Another iterative method to compute the eigenvalues of a matrix is known as the $QR$ method. The key insight behind this method is that similar matrices have the same eigenvalues, a fact proven in theorem \ref{thm:similar}.
 
 \begin{theorem}{similar matrices have the same eigenvalues}{similar}
-  Suppose $A$ and $C$ are similar square matrices. Then if $\lambda \in \mathbb{R}$ is an eigenvalue of $A$ if and only if it is an eigenvalue of $C$.
-  
+  Suppose $A$ and $C$ are similar square matrices. Then if $\lambda \in \mathbb{R}$ is an eigenvalue of $A$ if and only if it is an eigenvalue of $C$. 
 \end{theorem}
 \begin{proof}
   Suppose $A = BCB^{-1}$. Now consider an eigenvalue $\lambda$ of $A$ with eigenvector $\vec{x}$. Then
@@ -403,14 +439,14 @@ This is not exactly the QR method, but it captures much of the intuition behind 
   which essentially takes the QR decomposition of $A_k$ at each step and reverses the factors to find the next $A_{k+1}$. In many cases, as $k \to \infty$, the $A_k$'s approach an upper triangular matrix that is similar to $A$.
 \end{theorem}
 \begin{proof}
-  It is not always true that the $A_k$'s tend to a triangular matrix, but it is always true that $A_k$ is similar to $A$. To show this, let $A = QR$ and $A_1 = RQ$ for orthogonal $Q$ and triangular $R$. But note that
+  It is not always true that the $A_k$'s tend to a triangular matrix; in fact, according to \cite{cornell-qr}, it is not known in general that the QR method converges for non-symmetric matrices, although it usually works very well. However, it \emph{is} always true that $A_k$ is similar to $A$. To show this, let $A = QR$ and $A_1 = RQ$ for orthogonal $Q$ and triangular $R$. But note that
   \begin{equation*}
     QA_1Q^T = QRQQ^T = QR = A
   \end{equation*}
   so there exists a matrix $B$ such that $A = BA_1B^{-1}$, namely $B = Q^T$. At each step, the new $A_{k+1}$ is similar to the previous $A_k$, as desired.
 \end{proof}
 
-The basic QR method, as presented in theorem \ref{thm:qr}, does not always converge. An example of this, taken from \cite{cornell-qr}, is given in example \ref{ex:qr-fail}.
+The basic QR method, as presented in theorem \ref{thm:qr}, does not always converge. An example of this, taken from \cite{cornell-qr}, is given in example \ref{ex:qr-fail}. There are more advanced techniques for shifting the $A_k$'s to improve the algorithm's convergence; the reader is referred to \cite[p.~530]{strang} for details. Even this basic QR algorithm already has several advantages over deflation-based techniques such as the power method; it yields all the eigenvalues without suffering the rounding errors that deflation introduces \cite{deflation-robots}.
 
 \begin{example}{QR algorithm failure}{qr-fail}
   Consider the matrix
@@ -425,25 +461,27 @@ The basic QR method, as presented in theorem \ref{thm:qr}, does not always conve
   But $A' = RQ = A$, so the algorithm gets stuck and does not converge to a triangular matrix at all.
 \end{example}
 
-There are more advanced techniques for shifting the $A_k$'s to improve the algorithm's convergence, but they are somewhat beyond the scope of this paper. The basic QR method is the basis for many
-
-[address the thing with QR ordinarily requiring independent columns, perhaps use example [1 0 ; 1 0]]
+Of course, the QR algorithm is not perfect. Although there are advanced tricks to speed up the process, each step in the basic version presented in theorem \ref{thm:qr} takes $O(n^3)$ time, and converge can be slow \cite{nyu}. This is especially true for very large systems where we only care about a few eigenvectors; in this case, we are often better served by the power method \cite{deflation-robots}. Despite this, the QR method and its variants are some of the most popular eigenvalue algorithms \cite[p.~530]{strang} and have been for the past fifty years \cite{cornell-qr}, especially for dense matrices \cite{hessenberg}.
 
 \subsection{Going from Eigenvalues to Eigenvectors}
-The QR method, as presented in theorem \ref{thm:qr}, will find all of the eigenvalues of $A$, but now we are faced with the opposite problem that we had with the power method: how do we go from eigenvalues to the corresponding eigenvectors? Of course, by definition $\vec{x} \in N(A - \lambda I)$, so we could use elimination to get the reduced row echelon form of $A - \lambda I$ and thus the null space, but is there a more sophisticated technique we could employ?
+The QR method, as presented in theorem \ref{thm:qr}, will find all of the eigenvalues of $A$, but now we are faced with the opposite problem that we had with the power method: how do we go from eigenvalues to the corresponding eigenvectors? Of course, by theorem \ref{thm:poly}, $\vec{x} \in N(A - \lambda I)$, so we could use elimination to get the reduced row echelon form of $A - \lambda I$ and thus the null space, but is there a more sophisticated technique we could employ?
 
-One way we could do it is the inverse power method. This method relies on a few key observations [POSSIBLY PROVE...not too hard, but time?]:
+One way we could do it is called the inverse power method \cite{cornell-qr}. This method relies on a few key observations:
 \begin{itemize}
-  \item $A$ and $A - \mu I$ have the same eigenvectors.
-  \item If the $\lambda_i$'s are the eigenvalues of $A$, then $1/(\lambda_i - \mu_i$'s are the eigenvalues of $A - \mu I$.
+  \item $A$ and $A - \mu I$ have the same eigenvectors, for $\mu \in \mathbb{R}$.
+  \item If the $\lambda_i$'s are the eigenvalues of $A$, then $(\lambda_i - \mu)$'s are the eigenvalues of $A - \mu I$.
   \item $(A - \mu I)$ and $(A - \mu I)^{-1}$ have the same eigenvectors but reciprocal eigenvalues. (In general, as long as $\mu$ is not an eigenvalue of $A$, $A - \mu I$ will be invertible, since $\det(A - \mu I) \neq 0$ if $\mu$ is not an eigenvalue.)
 \end{itemize}
-Suppose we have the eigenvalues $\lambda_1, \ldots, \lambda_n$ of $A$, and we wish to find the eigenvector corresponding to, say, $\lambda_1$. We can take some $\mu$ that is closer to $\lambda_1$ than it is to all the other eigenvalues but is not an eigenvalue itself. Then $(A - \mu I)$
+Suppose we have the eigenvalues $\lambda_1, \ldots, \lambda_n$ of $A$, and we wish to find the eigenvector $\vec{x}_i$ corresponding to $\lambda_i$. We can take some $\mu$ that is closer to $\lambda_i$ than it is to all the other eigenvalues but is not an eigenvalue itself. Then $(A - \mu I)$ will have the same eigenvalues as $A$ itself. We apply the power method on $(A - \mu I)^{-1}$---we know that the eigenvalues of $(A - \mu I)^{-1}$ are
+\begin{equation*}
+  \frac{1}{\lambda_1 - \mu}, \ldots, \frac{1}{\lambda_n - \mu}.
+\end{equation*}
+But we selected $\mu \in \mathbb{R}$ to be close to $\lambda_i$, such that $|\lambda_i - \mu| < |\lambda_j - \mu|$ for $i \neq j$. Then the dominant eigenvalue of $(A - \mu I)^{-1}$ is $1/(\lambda_i - \mu)$, so when we apply the power method to $(A - \mu I)^{-1}$, we will get back $\vec{x}_i$, the corresponding eigenvector.
 
-The advantage of the QR method is that it does not suffer from the rounding errors that deflation-based methods do. However, it is also not as efficient, especially in many practical scenarios where we have large systems and only care about the most dominant eigenvectors. [cite last slide in that PPT, unless I get a better source]
+Besides cheating a bit by requiring the power method, one obvious objection to using the inverse power method to get eigenvectors is that it involves the computation of a matrix inverse. However, a clever observation can make this much more efficient \cite{ohio}: an iteration $B^{-1}\vec{x} = \vec{x}'$ is the same as numerically solving $B\vec{x}' = \vec{x}$, which can be done efficiently many times over by, for example, taking the LU decomposition of $B$.
 
 \subsection{Implementation}
-The QR method from theorem \ref{thm:qr} can be more or less directly transcribed into an algorithm:
+The QR method from theorem \ref{thm:qr} can be more or less directly transcribed into algorithm \ref{algo:qr}, whose Julia implementation is given in the appendix. The referenced subroutine \texttt{QRDecomposition} can be accomplished using a variety of methods, such as the Gram-Schmidt algorithm \cite[p.~327]{strang}. In practice, more advanced techniques are favored due to numerical stability with floating-point arithmetic \cite{cornell-gs}.
 
 \begin{algo}{\texttt{EigenQR}}{qr}
   \begin{algorithm}[H]
@@ -472,75 +510,280 @@ The QR method from theorem \ref{thm:qr} can be more or less directly transcribed
 \section{Connection to Singular Vectors}
 Up until now, we have been almost exclusively concerned with finding the eigenvectors and eigenvalues of a matrix. But what about finding the singular vectors of a matrix?
 
-Note that the singular vectors of any $m \times n$ matrix $A$ are just the eigenvectors of $A^TA$, so by finding the eigenvectors we already have a procedure for finding the singular vectors. To make the connection even better, note that $A^TA$ is symmetric, so by theorem \ref{thm:spectral} it is in fact diagonalizable. We can thus reliably use the power method to find both the eigenvectors and eigenvalues of $A^TA$, which give us the singular vectors and values of $A$.
+Note that the singular vectors of any $m \times n$ matrix $A$ are just the eigenvectors of $A^TA$, so by finding the eigenvectors we already have a procedure for finding the singular vectors. To make the connection even better, note that $A^TA$ is symmetric, so by theorem \ref{thm:spectral} it is in fact diagonalizable. We can thus reliably use both the power and QR methods to find both the eigenvectors and eigenvalues of $A^TA$, which give us the singular vectors and values of $A$. We therefore do not develop a separate algorithm for finding the singular value decomposition of a matrix.
 
 \begin{theorem}{spectral theorem for real symmetric matrices}{spectral}
-  If $A$ is a real symmetric $n \times n$ matrix, then $A$ has $n$ orthonormal eigenvectors. The reader is referred to [cite] for a full proof of this theorem.
+  If $A$ is a real symmetric $n \times n$ matrix, then $A$ has $n$ orthonormal eigenvectors. The reader is referred to \cite{proof-spectral} for a full proof of this theorem.
 \end{theorem}
 
 \section{Algorithm Comparison}
-Maybe make a table comparing power and QR, and add in some pretty graphs
+In this section, I summarize the advantages and disadvantages of the power and QR algorithms. I also present some data on their respective convergences on randomly generated matrices.
+
+The power method is perhaps the simplest and most intuitive of all iterative eigenvector algorithms, and its techniques form the basis for many of the more complex algorithms \cite{mit-sensitivity}. In its most efficient form, it makes use of matrix-vector multiplications, which are especially efficient on sparse matrices. However, its convergence is dependent on $|\lambda_2 / \lambda_1|$; if $\lambda_2$ is close to $\lambda_1$, the power method can converge very slowly, and if $\lambda_2 = \lambda_1$, the algorithm may not converge at all. Finally, the power method only gives the dominant eigenvector (and by extension, the dominant eigenvalue), which is typically sufficient. While we can use the ``inverse'' power method to find the smallest eigenvalue, finding any of the other eigenvalues requires the introduction of some deflation techniques, which reduce accuracy by introducing rounding errors at each step.
+
+The QR method is one of the most celebrated advances in numerical linear algebra and, with the addition of some convergence tricks, forms the basis for many real-world eigenvalue solvers. However, in its basic form (as present in theorem \ref{thm:qr}), it can become inefficient for large matrices, and it does not necessarily converge without the introduction of some shifting techniques.
+
+Finally, what's a comparison of algorithms without some head-to-head benchmarking? Figure \ref{fig-cmp} compares these two algorithms on finding the greatest eigenvalue of a randomly generated $5 \times 5$ matrix. Of course, the comparison is not entirely fair; the power and QR algorithms provide different things (dominant eigenvalue/vector vs. all eigenvalues), but it's as close a direct comparison as can be made. The Julia code for the comparison is given in the appendix.
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{power-cmp.pdf}
+  \end{subfigure}
+  \begin{subfigure}{.49\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{qr-cmp.pdf}
+  \end{subfigure}
+  \caption{The power method (left) and QR method (right) on the same randomly generated $5 \times 5$ diagonalizable matrix}
+  \label{fig-cmp}
+\end{figure}
 
 \section{Appendix: Julia Code Samples}
-In this appendix, I provide Julia implementations for the major algorithms presented. The Julia code for generating the plots in this paper is also included.
+In this appendix, I provide Julia implementations for the major algorithms presented. The Julia code for generating the plots in this paper is also included. Note that the original source code made use of some Unicode characters that are not easily reproducible with \LaTeX, so some variables have been renamed. A direct copy of the original source code can be conveniently obtained from \url{https://github.com/air-wreck/eigen}.
 
-We first present algorithm \ref{algo:pwrsym} for symmetric matrices only because it is highly illustrative. Additionally, [all we need for singular vectors]
+\begin{lstlisting}
+# project.jl
+#
+# 21-241 Final Project, Fall 2019
+# Eric Zheng, Section 4K
+#
+# This file provides numerical methods for computing the eigenvectors and
+# singular vectors of matrices.
 
-We square and then normalize by the first nonzero column of $A^n$. If such a column does not exist (i.e. $A^n$ is the zero matrix), then $A$ must have been a nilpotent matrix. In this case, the only eigenvalue can be zero, as proved in theorem \ref{thm:nilpotent}. In this case, the problem reduces to finding the null space of $A$.
+using LinearAlgebra;
 
-Now a matrix can have at most $n$ independent eigenvectors, so we only have to iterate up to $n$.
+" DominantEigen(A)
 
-\begin{theorem}{eigenvalues of a nilpotent matrix}{nilpotent}
-  If $A$ is a nilpotent matrix (i.e. $A^n$ is the zero matrix for some $n \in \mathbb{N}^+$), then the only eigenvalue of $A$ is $\lambda = 0$.
-  \begin{proof}
-    Suppose $\vec{x} \neq \vec{0}$ were an eigenvector of $A$ with eigenvalue $\lambda \neq 0$. Then $A^n\vec{x} = \lambda^n\vec{x}$, but if $\lambda \neq 0$, then this is some nonzero vector. However, $A^n = 0$, so we also have $A^n\vec{x} = \vec{0}$, a contradiction.
-  \end{proof}
-\end{theorem}
+Compute the dominant eigenvector of the diagonalizable matrix A using
+the power method. We can opt to use either the column method or the vector
+method, although the vector method is used by default.
+"
+function DominantEigen(A; tol=0.00001, max_iter=1000, method=:vector)
+  if method == :column
+    return DominantEigen1(A, tol=tol, max_iter=1000)
+  elseif method == :vector
+    return DominantEigen2(A, tol=tol, max_iter=1000)
+  else
+    error("method not recognized")
+  end
+end
 
-Algorithm \ref{algo:pwrsym} also gives us an easy way to compute the singular values and singular vectors of any real matrix $A$: simply apply $\textrm{\texttt{EigenPowerSymmetric}}(A^TA)$.
+function DominantEigen1(A; tol=0.00001, max_iter=1000)
 
-Finding the eigenvectors of a general square matrix (not necessarily symmetric) is somewhat trickier. We will
+  function first_nonzero_col(B; e=0.000001)
+    for i in axes(B, 1)
+      col = B[:,i]
+      if norm(col) > e
+        return col
+      end
+    end
+    return nothing
+  end
 
-[probably put a disclaimer at the top that we will only concern ourselves with real matrices, although we will sometimes emphasize this point in our algorithms. should we permit complex eigenvalues? nah, that moves us from Rn to Cn]
+  # squares a matrix and then makes the first nonzero column an unit vector
+  function square_and_normalize(B; e=0.000001)
+    B ^= 2
+    return B / norm(first_nonzero_col(B))
+  end
 
-\begin{example}{failure of the power method}{pwrfail}
-  The power method can fail when the original matrix does not have a dominant eigenvalue. For example, consider the matrix
-  \begin{equation*}
-    A = \begin{bmatrix}0 & 1 \\ 1 & 0\end{bmatrix}
-  \end{equation*}
-  which has eigenvalues $\lambda = \pm 1$.
-\end{example}
+  # continue computing powers of A until the Euclidean norm between
+  # iterations is less than the tolerance
+  A0 = A
+  iters::Int = 0
+  x = first_nonzero_col(A)
+  A = square_and_normalize(A)
+  while norm(x - first_nonzero_col(A)) > tol && iters < max_iter
+    x = first_nonzero_col(A)
+    A = square_and_normalize(A)
+    iters += 1
+  end
+  x = first_nonzero_col(A)
+  l = dot(A0 * x, x) / dot(x, x)
+  return (x = x, l = l)
+end
 
-\begin{example}{another failure of the power method}{pwrfail2}
-  The power method can also fail when the original matrix has complex eigenvalues. For example, consider the matrix
-  \begin{equation*}
-    A = \begin{bmatrix}0 & -1 & 0 \\ 1 & 0 & 0 \\ 0 & 0 & 1\end{bmatrix}
-  \end{equation*}
-  which is intuitively a rotation around the $z$-axis. In this case, there is only one real eigenvalue, $\lambda=1$. If we choose a good initial $\vec{x}_0 = (0,0,1)$, the algorithm does converge to the correct solution.
-\end{example}
+function DominantEigen2(A; tol=0.00001, max_iter=1000)
 
-\subsection{The QR Algorithm}
+  function normalize(x)
+    return x / norm(x)
+  end
 
-\begin{algo}{\texttt{Singular}}{singular}
-  \begin{algorithm}[H]
-    \SetKwInOut{Input}{input}
-    \SetKwInOut{Parameter}{parameter}
-    \SetKwInOut{Output}{output}
-    \SetKwFunction{EigenPowerSymmetric}{EigenPowerSymmetric}
+  x = normalize(rand(size(A, 1)))
+  iters = 0
+  while norm(normalize(A * x) - x) > tol && iters < max_iter
+    x = normalize(A * x)
+    iters += 1
+  end
+  l = dot(A * x, x) / dot(x, x)
+  return (x = x, l = l)
+end
 
-    \Input{real $m \times n$ matrix $A$}
-    \Parameter{tolerance $\varepsilon > 0$, max iterations $N > 0$}
-    \Output{list of singular vectors $vs$ and singular values $\sigma s$}
-    \BlankLine
-    \tcc{here we use the power method, but we could also use the QR method}
-    $xs$, $\lambda s$ \store \EigenPowerSymmetric{$A^TA$}\;
-    $\sigma s$ \store filter positive $\lambda s$\;
-    $l$ \store length of $\sigma s$\;
-    $vs$ \store first $l$ of $xs$\;
-    \Return{$vs$, $\sigma s$}
-  \end{algorithm}
-\end{algo}
+" EigenPowerSymmetric(S)
 
+Compute the eigenvectors of the symmetric matrix S using the power method.
+This still works on non-symmetric matrices, but only returns the eigenvalues
+and not the correct eigenvectors.
+"
+function EigenPowerSymmetric(S; tol=0.00001, max_iter=1000)
+  xs = []
+  ls = []
+  for i in axes(S, 1)  # by Spectral Thm, symmetric S has n eigenvectors
+                       # so we don't need to worry about zero, I think
+    x, l = DominantEigen2(S)
+    S -= l / (x' * x) * x * x'
+    push!(xs, x)
+    push!(ls, l)
+  end
+  return (x = hcat(xs...), l = hcat(ls...))
+end
+
+" EigenQR(A)
+
+Compute the eigenvalues of the square matrix A using QR decomposition.
+"
+function EigenQR(A; tol=0.00001, max_iter=1000)
+  Q, R = qr(A)
+  B = R * Q
+  iters = 1
+  while norm(A - B) > tol && iters < max_iter
+    Q, R = qr(B)
+    A = B
+    B = R * Q
+    iters += 1
+  end
+  return diag(B)
+end
+
+" EigenSolver(A)
+
+Ultimate subroutine to compute the eigenvectors and eigenvalues
+of the square matrix A. If no method is given, default to the power method.
+
+Returns: `(x, l)` (for :power), `l` (for :qr)
+
+Examples:
+```julia-repl
+A = [1 3 ; 3 1];
+EigenSolver(A, tol=0.001, method=:qr)
+```
+
+Notes:
+* The `:power` method can be applied to non-symmetric matrices, as long as they
+  are diagonalizable. In this case, the eigenvalues will be correct, but not
+  the eigenvectors.
+"
+function EigenSolver(A; tol=0.00001, max_iter=1000, method=:power)
+  if method == :power
+    return EigenPowerSymmetric(A, tol=tol, max_iter=max_iter)
+  elseif method == :qr
+    return EigenQR(A, tol=tol)
+  else
+    error("method not recognized")
+  end
+end
+
+" Singular(A)
+
+Compute the singular vectors and values for the matrix A.
+
+Returns: `(v, s)`
+
+Examples:
+```julia-repl
+A = [1 2 3 4 ; 5 6 7 8 ; 9 10 11 12];
+Singular(A)
+```
+
+Notes:
+* e > 0 is the tolerance for comparing a singular value to zero.
+  The default is e = 0.0000001.
+"
+function Singular(A; tol=0.00001, max_iter=1000, method=:power, e=0.0000001)
+  v, l = EigenSolver(A' * A, tol=tol, max_iter=max_iter, method=method)
+  s = map(sqrt, filter(x -> x > e, l))
+  return (v = v[:,1:length(s)], s = s)
+end
+\end{lstlisting}
+
+And this is the source code for all the graphs produced:
+\begin{lstlisting}
+# project.jl
+#
+# 21-241 Final Project, Fall 2019
+# Eric Zheng, Section 4K
+#
+# This file makes the pretty plots for the project.
+
+include("project.jl")
+using Plots
+
+# we reimlpement DominantEigen to keep
+# track of prior values for plotting
+function PlotPowerConvergence()
+  A0 = [23 5 2 ; 5 23 2 ; 2 2 26]
+  x  = [1,1,1] / norm([1,1,1])
+  A  = A0 / norm(A0[:,1])
+
+  xs = 1:20  # number of algorithm steps
+  ys = Float64[]
+  for _ in xs
+    push!(ys, norm(A[:,1] - x))
+    A *= A0
+    A /= norm(A[:,1])
+  end
+  plot(xs, map(i -> (4/5)^i, xs),
+       label="(4/5)^k", xlabel="steps", ylabel="eigenvector error")
+  scatter!(xs, ys, label="power method")
+  savefig("power-method.pdf")
+end
+
+function RandomDiag(n)
+  A  = rand(n, n)
+  ls = rand(n)
+  l  = sort(ls, rev=true)[1]
+  A  = A * diagm(0 => ls) / A
+  return A, l
+end
+
+function PlotPowerCmp(A0, l, n)
+  A  = A0 / norm(A0[:,1])
+  xs = 1:n
+  ys = Float64[]
+  for _ in xs
+    x = A[:,1]
+    push!(ys, abs(dot(A0 * x, x) / dot(x, x) - l))
+    A *= A0
+    A /= norm(A[:,1])
+  end
+  scatter(xs, ys, label="power method",
+          xlabel="steps", ylabel="eigenvalue error")
+  savefig("power-cmp.pdf")
+end
+
+function PlotQRCmp(A0, l, n)
+  Q, R = qr(A0)
+  A  = R * Q
+  ys = Float64[]
+  xs = 1:n
+  for _ in xs
+    guess = sort(diag(A), rev=true)[1]
+    push!(ys, abs(guess - l))
+    Q, R = qr(A)
+    A0 = A
+    A  = R * Q
+  end
+  scatter(xs, ys, label="QR method",
+          xlabel="steps", ylabel="eigenvalue error")
+  savefig("qr-cmp.pdf")
+end
+
+function PlotPowerQRCmp()
+  A, l = RandomDiag(5)
+  PlotPowerCmp(A, l, 20)
+  PlotQRCmp(A, l, 20)
+end
+\end{lstlisting}
 
 \begin{thebibliography}{9}
   \bibitem{pwr-rot} \url{https://www.cs.huji.ac.il/\~csip/tirgul2.pdf}
@@ -552,6 +795,12 @@ Finding the eigenvectors of a general square matrix (not necessarily symmetric) 
   \bibitem{strang} Strang. \emph{Introduction to Linear Algebra}, fifth edition.
   \bibitem{cornell-qr} \url{http://pi.math.cornell.edu/\~web6140/TopTenAlgorithms/QRalgorithm.html}
   \bibitem{deflation-robots} \url{http://www.robots.ox.ac.uk/\~sjrob/Teaching/EngComp/ecl4.pdf}
+  \bibitem{ohio} \url{http://www.ohiouniversityfaculty.com/youngt/IntNumMeth/lecture16.pdf}
+  \bibitem{nyu} \url{https://math.nyu.edu/\~stadler/num1/material/num1_eigenvalues.pdf}
+  \bibitem{proof-spectral} \url{http://www-math.mit.edu/\~dav/spectral.pdf}
+  \bibitem{hessenberg} Wang and Gragg. Convergence of the shifted QR algorithm for unitary Hessenberg matrices. \emph{Mathematics of Computation} 70(240).
+  \bibitem{abel} Rosen. Niels Henrik Abel and equations of the fifth degree. \emph{The American Mathematical Monthly} 102(6).
+  \bibitem{cornell-gs} \url{http://pi.math.cornell.edu/\~web6140/TopTenAlgorithms/Householder.html}
 \end{thebibliography}
 
 \end{document}
